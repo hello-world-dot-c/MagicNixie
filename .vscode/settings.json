@@ -1,0 +1,14 @@
+{
+  "files.associations": {
+    "memory": "cpp",
+    "array": "cpp",
+    "*.tcc": "cpp",
+    "deque": "cpp",
+    "list": "cpp",
+    "string": "cpp",
+    "unordered_map": "cpp",
+    "vector": "cpp",
+    "random": "cpp",
+    "initializer_list": "cpp"
+  }
+}
