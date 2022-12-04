@@ -103,7 +103,8 @@ static struct {
     uint8_t cur;
     uint8_t min;
     uint8_t max;
-    uint8_t offs; // Phase offset in percent 
+    uint8_t offs; // Phase offset in percent
+    bool disabled; 
   } digit[6];
 } antiPoisoning;
 
@@ -167,11 +168,12 @@ void taskNixieFastUpdate() {
   }
 
   // Apply subliminal anti-poisoning, if enabled. Distribute the anti-poisoning so that
-  // it doesn't happen to all digits at the same time.
+  // it doesn't happen to all digits at the same time. Don't apply it to digits that
+  // are not currently showing any number.
   if (gConf.antiPoisoningLevel > 0) {
     uint64_t ap_out = 0;
     for (int digitpos=0; digitpos<6; digitpos++) {
-      if (antiPoisoning.digit[digitpos].min != 0xFF) {
+      if ((antiPoisoning.digit[digitpos].min != 0xFF) && !antiPoisoning.digit[digitpos].disabled) {
         uint16_t start, end;
         start = (antiPoisoning.maxctr / 100) * antiPoisoning.digit[digitpos].offs;
         end = start + gConf.antiPoisoningLevel;
@@ -248,7 +250,7 @@ void taskNixieSlowUpdate() {
     }
   }
 
-  // Apply nixie-wide fading
+  // Apply nixie-wide (global) dimming/fading
   fadingCtrl.analog_max = (gConf.nixieBrightness * PWMRANGE) / 100;
   if (gConf.nixieBrightness<100) {
     fadingCtrl.analog_val = fadingCtrl.analog_max;
@@ -328,6 +330,10 @@ void nixiePrint(int Pos, char *Str, uint8_t blending) {
         uint8_t digit = ch-'0';
         displayMem[blending].mask |= ~digitMask[digitpos]; // set relevant bits to 1
         displayMem[blending].lword |= (1ULL << (digitBitNum[digitpos][digit] -1));
+        antiPoisoning.digit[digitpos].disabled = false;
+      } else if (ch == ' ') {
+        // space clears the position and also temporarily disables anti-poisoning
+        antiPoisoning.digit[digitpos].disabled = true;
       }
     } else {
       bool set = false;
@@ -370,7 +376,10 @@ void setupNixie() {
   pinMode(PIN_SHDN, OUTPUT);
   digitalWrite(PIN_SHDN, LOW); // HIGH = ON 
   SPI.begin();
-  SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE3));
+  // The concatenated shift register of the HV57708 can handle up to 2 MHz SPI clock,
+  // but we limit it to 1 MHz here to reduce EMI since the signal needs to travel a
+  // bit of distance.
+  SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
 
   memset(displayMem, 0, sizeof(displayMem));
   memset(&fadingCtrl, 0, sizeof(fadingCtrl));
@@ -411,6 +420,7 @@ void setupNixie() {
   for (int i=0; i<6; i++) {
     antiPoisoning.digit[i].min =   // never use anti-poisoning by default
     antiPoisoning.digit[i].max = 0xFF;
+    antiPoisoning.digit[i].disabled = false;
   }
   antiPoisoning.digit[0].min = gConf.use12hDisplay ? 2 : 3;
   antiPoisoning.digit[0].max = 9;
