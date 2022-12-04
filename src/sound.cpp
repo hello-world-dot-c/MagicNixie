@@ -26,6 +26,8 @@ DEFINITIONS AND SETTINGS
 #define SND_MILLISECONDS_BY_TICKS(time_ms)  (((time_ms) + SOUND_UPD_PERIOD - 1) / SOUND_UPD_PERIOD)
 #define SND_SECONDS_BY_TICKS(time_s) SND_MILLISECONDS_BY_TICKS(1000*(time_s))
 
+#define PLAY_XMAS // play Christmas song from 24th through the 26th of December
+//#define PLAY_ALL_XMAS // play Christmas song from 1st Advent through the 26th of December
 
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
@@ -274,11 +276,28 @@ void taskSoundUpdate() {
   if (selfTest) {
     selfTestCnt++;
     if (selfTestCnt == SND_SECONDS_BY_TICKS(1)) {
+#if defined(PLAY_XMAS)
+#if defined(PLAY_ALL_XMAS)
+      if (
+        ((myTZ.month()==11) && 
+          (myTZ.day()-myTZ.weekday()>=26) ) 
+        ||
+        ((myTZ.month()==12) && 
+        ((myTZ.day()>=1) && (myTZ.day()<=26)) )
+      )
+#else 
       if ((myTZ.month()==12) && 
-        ((myTZ.day()>=24) && (myTZ.day()<=26)) ) {
+        ((myTZ.day()>=24) && (myTZ.day()<=26)))
+      {
+        _PF(MODULE"Detected Christmas time, playing Christmas song\n");
         sndptr = parseSong(songs[6]); // playing "We Wish You..."
-      } else {
+      }
+      else
+#endif
+#endif
+      {
         sndptr = parseSong(songs[random(1000) % 6]); // playing other random song
+        _PF(MODULE"Playing random song\n");
       }
       play_song = true;
     }
