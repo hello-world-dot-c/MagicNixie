@@ -26,7 +26,7 @@ DEFINITIONS AND SETTINGS
 
 #define LEDS_MILLISECONDS_BY_TICKS(time_ms)  (((time_ms) + LED_UPD_PERIOD - 1) / LED_UPD_PERIOD)
 #define LEDS_SECONDS_BY_TICKS(time_s) LEDS_MILLISECONDS_BY_TICKS(1000*(time_s))
-#define LEDS_UPDATE_PERIOD_S 20
+#define LEDS_UPDATE_PERIOD_S 5
 
 
 /**************************************************************************
@@ -76,7 +76,7 @@ void taskLedsUpdate() {
   if (t_LedsUpdate.isFirstIteration()) {
     tickCnt = 0;
     selfTest = true;
-    _PL(MODULE"Self test started");
+    _PF(MODULE"Self test started\n");
     next_full_second = 1;
   }
 

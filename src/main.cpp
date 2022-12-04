@@ -95,6 +95,50 @@ String formatBytes(size_t bytes)  // convert sizes in bytes to KB and MB
   return "";
 }
 
+#define MAX_STR 120
+void logPrintf(String fmt, ...)
+{
+  static char outstrln[MAX_STR+1] = { '\0' };
+  char outstr[MAX_STR+1];
+  char fmtstr[MAX_STR+1];
+	va_list argp;
+  char *outstrptr;
+  int len;
+  bool println;
+  bool printov;
+
+  fmt.toCharArray(fmtstr,MAX_STR);
+	va_start(argp, fmt);
+	(void)vsnprintf(outstr, MAX_STR, fmtstr, argp);
+	va_end(argp);
+  outstrptr = outstr;
+  do {
+    println = false;
+    printov = false;
+    char *ptr = strstr(outstrptr, "\n");
+    if (ptr != NULL) {
+      len = (ptr-outstrptr);
+      println = true;  // print when there is a new line
+    } else {
+      len = strlen(outstrptr);
+    }
+    if (strlen(outstrln)+len > MAX_STR) {
+      len = MAX_STR-strlen(outstrln);
+      printov = true;  // print when the line becomes too long
+    }
+    strncat(outstrln, outstrptr, len);
+    if (println || printov) {
+      Serial.printf("%s\n",outstrln);
+      mqttLogPrint(outstrln);
+      outstrptr += len;
+      if (println)
+        outstrptr += strlen("\n");
+      *outstrln = '\0'; // clear line buffer
+    }
+  } while (println || printov);
+}
+
+
 /*--------------------------------------------------------------------*/
 /*  Utility function                                                  */
 /*  Calculates the CRC8 checksum for a byte stream.                   */
@@ -137,7 +181,7 @@ void saveConfig() {
     // Save present configuration in EEPROM.
   EEPROM.begin(NVOL_SIZE); // Needed in order to start read or write to flash.
   datPtr = (uint8_t *)&gConf;
-  _PP(MODULE"Writing EEPROM: ");
+  _PF(MODULE"Writing EEPROM: ");
   for (i=0; i<sizeof(gConf_t); i++) {
     crc = calculateCRC8(*datPtr,false);
     EEPROM.write(NVOL_START_SETTINGS+i, *datPtr);
@@ -160,7 +204,7 @@ bool readConfig() {
     // Save present configuration in EEPROM.
   EEPROM.begin(NVOL_SIZE); // Needed in order to start read or write to flash.
   datPtr = (uint8_t *)&tmp_conf;
-  _PP(MODULE"Reading EEPROM: ");
+  _PF(MODULE"Reading EEPROM: ");
   for (i=0; i<sizeof(gConf_t); i++) {
     *datPtr = EEPROM.read(NVOL_START_SETTINGS+i);
     _PF("%02X ", *datPtr);
@@ -171,10 +215,10 @@ bool readConfig() {
   _PF("%02X\n", rcrc);
   if (ccrc == rcrc) {
     memcpy(&gConf, &tmp_conf, sizeof(gConf_t));
-    _PL(MODULE"Configuration settings restored from EEPROM");
+    _PF(MODULE"Configuration settings restored from EEPROM\n");
     return true;
   } else {
-    _PL(MODULE"Configuration settings not restored from EEPROM, CRC mismatch");
+    _PF(MODULE"Configuration settings not restored from EEPROM, CRC mismatch\n");
     return false;
   }
 }
@@ -191,7 +235,7 @@ void setup() {
   while(!Serial){} // Waiting for serial connection
 
   delay(1000);
-  _PL(MAGICNIXIE_VERSION);
+  _PF(MAGICNIXIE_VERSION"\n");
   _PF(MODULE"CPU frequency: %d MHz\n", system_get_cpu_freq());
 
   if (!readConfig()) {
@@ -215,11 +259,8 @@ void setup() {
   if (SPIFFS.begin()) {  
 //    SPIFFS.format();    
     // Start the SPIFFS and list all contents
-    _PP(MODULE"** Starting SPIFFS.");
-    SPIFFS.begin();
-
-    _PL(" [OK]");
-    _PL(MODULE"** Contents:");
+    _PF(MODULE"** Starting SPIFFS [OK]\n");
+    _PF(MODULE"** Contents:\n");
     {
       Dir dir = SPIFFS.openDir("/");
       while (dir.next())                       // List the file system contents
@@ -228,12 +269,12 @@ void setup() {
         size_t fileSize = dir.fileSize();
         _PF("\t%s, size: %s\r\n", fileName.c_str(), formatBytes(fileSize).c_str());
       }
-      _PL("");
+      _PF("\n");
     }
   }
   else
   {
-    _PL(MODULE"Error mounting file system");
+    _PF(MODULE"Error mounting file system\n");
   }
   
   setupTime();

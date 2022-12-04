@@ -164,6 +164,7 @@ void taskNixieFastUpdate() {
     }
   }
 
+  // Apply subliminal anti-poisoning, if enabled.
   if (gConf.antiPoisoningLevel > 0) {
     if (antiPoisoning.ctr < gConf.antiPoisoningLevel) {
       uint64_t ap_out = 0;
@@ -195,7 +196,7 @@ void taskNixieSlowUpdate() {
     t_TimeFastUpdate.disable();  // stop time display, normally not necessary at this time
     tickCnt = 0;
     selfTest = true;
-    _PL(MODULE"Self test started");
+    _PF(MODULE"Self test started\n");
     next_full_second = 1;
     nixieFade(true,5000, 0);
   }
@@ -241,6 +242,7 @@ void taskNixieSlowUpdate() {
     }
   }
 
+  // Apply nixie-wide fading
   fadingCtrl.analog_max = (gConf.nixieBrightness * PWMRANGE) / 100;
   if (gConf.nixieBrightness<100) {
     fadingCtrl.analog_val = fadingCtrl.analog_max;
@@ -267,7 +269,6 @@ void taskNixieSlowUpdate() {
   } else {
     digitalWrite(PIN_SHDN, fadingCtrl.digital_val); // Control nixie driver
   }
-
 }
 
 

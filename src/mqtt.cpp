@@ -37,22 +37,22 @@ LOCAL FUNCTIONS
 static void receiveMQTTCallback (char* topic, byte* payload, unsigned int length) {
   StaticJsonDocument<256> doc;
 
-  _PP(MODULE"Message arrived [");
-  _PP(topic);
-  _PL("]: ---");
+  _PF(MODULE"Message arrived [");
+  _PF(topic);
+  _PF("]: ---\n");
   for (unsigned int i=0;i<length;i++) {
     _PF("%c", (char)payload[i]);
   }
-  _PL("---");
+  _PF("---\n");
   DeserializationError error = deserializeJson(doc, payload, length);
   if (error) {
-    _PL(MODULE"JSON parsing failed");
+    _PF(MODULE"JSON parsing failed\n");
   }
   else {
-    _PL(MODULE"JSON: ---");
+    _PF(MODULE"JSON: ---\n");
     serializeJsonPretty(doc, Serial);
-    _PL("");
-    _PL("---");
+    _PF("\n");
+    _PF("---\n");
   }
 }
 
@@ -73,6 +73,12 @@ static IPAddress applyMqttServerIP()
 /**************************************************************************
 PUBLIC FUNCTIONS
 ***************************************************************************/
+void mqttLogPrint(char * outstr) {
+  if (mqttClient.connected()) {
+    mqttClient.publish(MQTT_LOG_TOPIC,outstr);
+  }  
+}
+
 void taskMqttConnect() {
   static IPAddress IP;
   static boolean connected = false;
@@ -91,7 +97,7 @@ void taskMqttConnect() {
   }
     
   if (!mqttClient.connected()) {
-    _PL(MODULE"MQTT connection lost, reconnecting...");
+    _PF(MODULE"MQTT connection lost, reconnecting...\n");
     if (IP.toString() == "255.255.255.255")
     {
       IP = applyMqttServerIP();
@@ -103,16 +109,14 @@ void taskMqttConnect() {
       // Once connected, publish an announcement...
       mqttClient.publish(MQTT_OUT_TOPIC,"hello world");
       // ... and resubscribe
-      _PP(MODULE"MQTT subscribing to ");
-      _PL(MQTT_IN_TOPIC);
+      _PF(MODULE"MQTT subscribing to ");
+      _PF(MQTT_IN_TOPIC"\n");
       mqttClient.subscribe(MQTT_IN_TOPIC);
       connected = true;
 
       t_MqttRun.enable();
     } else {
-      _PP(MODULE"MQTT connection failed, rc=");
-      _PP(mqttClient.state());
-      _PL(" try again later");
+      _PF(MODULE"MQTT connection failed, rc=%d, try again later\n",mqttClient.state());
       connected = false;
 
       t_MqttRun.disable();

@@ -81,7 +81,7 @@ const char* parseSong(const char *p)
     p++;   // ignore name
   }
   p++;                     // skip ':'
-  _PP(", ");
+  _PF(", ");
 
   // get default duration
   if (*p == 'd')
@@ -235,7 +235,7 @@ const char* playmusic(const char *p)
     return p;
   }
   
-  _PL(MODULE"Incorrect Song Format!");
+  _PF(MODULE"Incorrect Song Format!\n");
 
   return NULL; //error
 }
@@ -249,7 +249,7 @@ void taskSoundUpdate() {
     EasyBuzzer.setPin(PIN_BUZZ);
     selfTestCnt = 0;
     selfTest = true;
-    _PL(MODULE"Self test started");
+    _PF(MODULE"Self test started\n");
   }
 
   static const char *sndptr = NULL;
@@ -258,7 +258,12 @@ void taskSoundUpdate() {
   if (selfTest) {
     selfTestCnt++;
     if (selfTestCnt == SND_SECONDS_BY_TICKS(1)) {
-      sndptr = parseSong(songs[random(1000) % 6]);
+      if ((myTZ.month()==12) && 
+        ((myTZ.day()>=24) && (myTZ.day()<=26)) ) {
+        sndptr = parseSong(songs[6]); // playing "We Wish You..."
+      } else {
+        sndptr = parseSong(songs[random(1000) % 6]); // playing other random song
+      }
       play_song = true;
     }
   }
@@ -271,7 +276,7 @@ void taskSoundUpdate() {
       }
     }
   } else if (play_song) {
-    _PL(MODULE"Song finished playing");
+    _PF(MODULE"Song finished playing\n");
     play_song = false;
     if (selfTest)
       selfTest = false;

@@ -27,7 +27,7 @@ DEFINITIONS AND SETTINGS
 #define USE_NTP 1
 #endif
 #ifndef USE_RTC
-#define USE_RTC 1
+#define USE_RTC 0
 #endif
 
 #define NTP_UPDATE_PERIOD  60 //600 // 10 minutes
@@ -140,11 +140,11 @@ void taskSystemTimeUpdate() {
   rtcTime_t rtc_time;
 
   if (t_SystemTimeUpdate.isFirstIteration()) {
-    _PL(MODULE"System time update task started");
+    _PF(MODULE"System time update task started\n");
 #if USE_RTC
     Wire.begin(); // Start the I2C
     if (! RTC.begin())  // Init RTC
-      _PL(MODULE"Could not find RTC");
+      _PF(MODULE"Could not find RTC\n");
     Wire.setClock(50000); // I2C works better at reduced speed
 #endif // USE_RTC
 //    setDebug(INFO, Serial);
@@ -163,7 +163,9 @@ void taskSystemTimeUpdate() {
   // the last time we checked.
   last_update_time = lastNtpUpdateTime();
   if (last_update_time != last_saved_update_time) {
-    _PL(MODULE"NTP update successful, current time: "+myTZ.dateTime());
+    char datetimestr[30];
+    myTZ.dateTime().toCharArray(datetimestr,30);
+    _PF(MODULE"NTP update successful, current time: %s\n", datetimestr);
     last_saved_update_time = last_update_time;
     ntp_update_ticks = NTP_UPDATE_TICKS-1-(NTP_UPDATE_REPEATS-ntp_update_repeats);
     ntp_update_repeats = NTP_UPDATE_REPEATS;
@@ -182,7 +184,7 @@ void taskSystemTimeUpdate() {
       if (ntp_update_triggered) {
         ntp_update_repeats--;
         if (ntp_update_repeats==0) {
-          _PF(MODULE"NTP update FAILED: Giving up for now");
+          _PF(MODULE"NTP update FAILED: Giving up for now\n");
           ntp_update_ticks = NTP_UPDATE_TICKS-NTP_UPDATE_REPEATS;
           ntp_update_triggered = false;
           ntp_update_repeats = NTP_UPDATE_REPEATS;
@@ -197,7 +199,7 @@ void taskSystemTimeUpdate() {
         ntp_update_triggered = true;
       }
     } else if (ntp_update_triggered) {
-      _PL(MODULE"NTP update FAILED: Timeout");
+      _PF(MODULE"NTP update FAILED: Timeout\n");
       ntp_update_triggered = false;
       ntp_update_ticks = 1;  // try immediately next call until we are successful
     }
@@ -221,16 +223,18 @@ void taskSystemTimeUpdate() {
         nowTime.day = myTZ.day();
         nowTime.month = myTZ.month();
         nowTime.year = myTZ.year();
+        char dtstr[40];
+        myTZ.dateTime().toCharArray(dtstr,sizeof(dtstr));
         if (0 == memcmp(&rtc_time, &nowTime, sizeof(rtcTime_t))) {
-          _PL(MODULE"RTC read same time, not updated: "+myTZ.dateTime()); 
+          _PF(MODULE"RTC read same time, not updated: %s\n", dtstr); 
         } else {
           myTZ.setTime(rtc_time.hours, rtc_time.minutes, rtc_time.seconds,
             rtc_time.day, rtc_time.month, rtc_time.year);
-          _PL(MODULE"RTC read time, updated: "+myTZ.dateTime()); 
+          _PF(MODULE"RTC read time, updated: %s\n", dtstr); 
           rtc_update_ticks = RTC_UPDATE_TICKS;  // update again later
         }
       } else {
-        _PL(MODULE"RTC read time FAILED!");
+        _PF(MODULE"RTC read time FAILED!\n");
         rtc_update_ticks = 2000/SYS_TIME_UPD_PERIOD;  // try again in 2 seconds until we are successful
       }
     }
@@ -328,10 +332,12 @@ void taskTimeFastUpdate() {
 #if USE_RTC
     if (setUpdateRtc && gConf.syncRTC) {
       if (setRTCDateTime(myTZ.hour(), myTZ.minute(), myTZ.second(), myTZ.day(), myTZ.month(), myTZ.year())) {
-        _PL(MODULE"RTC updated, time: "+myTZ.dateTime()); 
+        char dtstr[40];
+        myTZ.dateTime().toCharArray(dtstr,sizeof(dtstr));
+        _PF(MODULE"RTC updated, time: %s\n", dtstr); 
         setUpdateRtc = false;
       } else {
-        _PL(MODULE"RTC not updated, FAILED"); 
+        _PF(MODULE"RTC not updated, FAILED\n"); 
       }
     }
 #endif // USE_RTC

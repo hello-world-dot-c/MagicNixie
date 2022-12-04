@@ -50,13 +50,10 @@
 
 // Debug output macros
 #ifdef _DEBUG_
-#define _PF(f_, ...) Serial.printf((f_), ##__VA_ARGS__)
-#define _PP(a) Serial.print(a)
-#define _PL(a) Serial.println(a)
+//#define _PF(f_, ...) Serial.printf((f_), ##__VA_ARGS__)
+#define _PF(f_, ...) logPrintf((f_), ##__VA_ARGS__)
 #else
 #define _PF(f_, ...)
-#define _PP(a)
-#define _PL(a)
 #endif
 
 /**************************************************************************
@@ -108,6 +105,7 @@ PUBLIC FUNCTIONS
 void keypressWait();
 boolean isNumeric(String str);
 String formatBytes(size_t bytes);
+void logPrintf(String fmt, ...);
 uint8_t calculateCRC8(uint8_t data,bool reset);
 void saveConfig();
 bool readConfig();

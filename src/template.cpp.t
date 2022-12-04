@@ -46,7 +46,7 @@ void taskNixieFastUpdate() {
 
 void setupNixie() {
   //if you get here you have connected to the WiFi
-  _PL("Connected to SSID " + WiFi.SSID() + ", own IP is " + WiFi.localIP().toString());
+  _PF("%s\n","Connected to SSID " + WiFi.SSID() + ", own IP is " + WiFi.localIP().toString());
 }
 
 void loopNixie() {

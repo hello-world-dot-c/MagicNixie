@@ -30,6 +30,7 @@ typedef struct {
 } rtcTime_t;
 
 extern bool gTimeDatesetUpdateRtc;
+extern Timezone myTZ;
 
 // Task callback methods prototypes
 extern void taskSystemTimeUpdate();

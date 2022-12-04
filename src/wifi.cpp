@@ -36,11 +36,13 @@ LOCAL VARIABLES/CLASSES
 LOCAL FUNCTIONS
 ***************************************************************************/
 static void configModeCallback (WiFiManager *myWiFiManager) {
-  _PL(MODULE"Entered config mode");
-  _PP(MODULE);
-  _PL(WiFi.softAPIP());
+  char ipstr[40];
+  WiFi.softAPIP().toString().toCharArray(ipstr,sizeof(ipstr));
+  _PF(MODULE"Entered config mode,\n");
+  _PF(MODULE"  AP IP address: %s\n",ipstr);
   //if you used auto generated SSID, print it
-  _PL(myWiFiManager->getConfigPortalSSID());
+  myWiFiManager->getConfigPortalSSID().toCharArray(ipstr,sizeof(ipstr));
+  _PF("  SSID: %s\n",ipstr);
 }
 
 
@@ -54,12 +56,14 @@ void taskWiFiConnect() {
   }
     
  if ((WiFi.status() != WL_CONNECTED) || (WiFi.localIP().toString() == "0.0.0.0")) {
-    _PL(MODULE"WiFi connection lost, reconnecting...");
+    _PF(MODULE"WiFi connection lost, reconnecting...\n");
     connected = false;
   }
   else if (!connected)
   {
-    _PL(MODULE"WiFi connection established, using " + WiFi.localIP().toString());
+    char ipstr[20];
+    WiFi.localIP().toString().toCharArray(ipstr,sizeof(ipstr));
+    _PF(MODULE"WiFi connection established, using %s\n", ipstr);
     connected = true;
     t_MqttConnect.enable();
     t_WebConnect.enable();
@@ -85,14 +89,18 @@ void setupWifi() {
   //here  "AutoConnectAP"
   //and goes into a blocking loop awaiting configuration
   if (!wifiManager.autoConnect(WIFIAPNAME)) {
-    _PL(MODULE"failed to connect and hit timeout");
+    _PF(MODULE"failed to connect and hit timeout\n");
     //reset and try again, or maybe put it to deep sleep
 //    ESP.reset();
 //    delay(1000);
   } 
 
   //if you get here you have connected to the WiFi
-  _PL(MODULE"Connected to SSID " + WiFi.SSID() + ", own IP is " + WiFi.localIP().toString());
+  char prstr[40];
+  WiFi.SSID().toCharArray(prstr,sizeof(prstr));
+  _PF(MODULE"Connected to SSID %s, ",prstr);
+  WiFi.localIP().toString().toCharArray(prstr,sizeof(prstr));
+  _PF("own IP is %s\n",prstr);
 }
 
 /* EOF */

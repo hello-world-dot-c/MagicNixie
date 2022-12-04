@@ -32,9 +32,10 @@
 // MQTT settings
 #define MQTT_SERVER "homeslave.fritz.box"
 #define MQTT_SERVER_PORT 1883
-#define MQTT_CLIENT "nixie-clock"
-#define MQTT_MYNAME "magicnixie"
+#define MQTT_CLIENT "nixie-clock2"
+#define MQTT_MYNAME "magicnixie2"
 #define MQTT_OUT_TOPIC "tele/" MQTT_MYNAME "/STATE"
+#define MQTT_LOG_TOPIC "tele/" MQTT_MYNAME "/LOG"
 #define MQTT_IN_TOPIC "cmnd/" MQTT_MYNAME "/#"
 
 // Debug and Test options

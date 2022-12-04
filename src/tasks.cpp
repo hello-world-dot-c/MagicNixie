@@ -63,7 +63,7 @@ static void addAndRun(Task *taskToRun) {
 
 void taskTasksMonitor() {
   if (t_TasksMonitor.isFirstIteration()) {
-    _PL(MODULE"Starting CPU measurement");
+    _PF(MODULE"Starting CPU measurement\n");
     ts.cpuLoadReset();
     return;
   }
@@ -80,7 +80,7 @@ PUBLIC FUNCTIONS
 ***************************************************************************/
 void setupTasks() {
   ts.init();
-  _PL(MODULE"Initialized scheduler");
+  _PF(MODULE"Initialized scheduler\n");
 
   // Define tasks that are run later
   ts.addTask(t_WebConnect);

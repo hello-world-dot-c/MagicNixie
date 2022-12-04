@@ -24,6 +24,7 @@
 // Task callback methods prototypes
 extern void taskMqttConnect();
 extern void taskMqttRun();
+extern void mqttLogPrint(char * outstr);
 
 // Function prototypes
 void setupMqtt();

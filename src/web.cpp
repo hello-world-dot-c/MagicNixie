@@ -488,7 +488,7 @@ void taskWebConnect() {
     Serial.println(MODULE"**  HTTP server started");
     // Print the IP address
     Serial.print(MODULE"**   Use this URL : "); Serial.print("http://"); Serial.print(WiFi.localIP()); Serial.println("/");
-    Serial.println(MODULE"** HTTP server setup done\n");
+    Serial.print(MODULE"** HTTP server setup done\n");
     do_connect = false; 
     t_WebRun.enable();
   }
