@@ -77,10 +77,14 @@ String formatBytes(size_t bytes)  // convert sizes in bytes to KB and MB
 }
 
 void setup() {
-  // Running at 160 MHz for snappier performance.
-  //system_update_cpu_freq(160);
   // Init UART for debugging output.
   Serial.begin(115200);
+
+  // Initialize critical hardware first
+  setupLeds();
+  setupNixie();
+
+  while(!Serial){} // Waiting for serial connection
   _PL(MAGICNIXIE_VERSION);
   _PF(MODULE"CPU frequency: %d MHz\n", system_get_cpu_freq());
 
@@ -108,15 +112,11 @@ void setup() {
     _PL(MODULE"Error mounting file system");
   }
   
-  setupNixie();
-  setupLeds();
+  setupTime();
   setupWifi();
   setupMqtt();
   setupWeb();
   setupTasks();
-
-  nixiePrint(0, "01:23'45");
-  testLeds();
 }
 
 void loop() {

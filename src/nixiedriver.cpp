@@ -34,7 +34,8 @@ static const uint8_t digitBitNum[7][10] = {
   { 32, 16, 24,  8,  0,  0,  0,  0,  0,  0 }  /* columns: lower left, upper left, lower right, upper right */
 };
 
-static uint64_t digitMask[8];  // is filled on startup
+static uint64_t digitMask[8];  // masks to turn off bits for digit - filled on startup
+
 
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
@@ -74,7 +75,7 @@ void taskNixieUpdate() {
 }
 
 
-void nixiePrint(int Pos, String Str) {
+void nixiePrint(int Pos, char *Str) {
   int i, len, digitpos;
   char ch;
   char str[10];
@@ -83,7 +84,7 @@ void nixiePrint(int Pos, String Str) {
     return;
   }
 
-  Str.toCharArray(str, sizeof(str));
+  strncpy(str, Str, sizeof(str));
   len = strlen(str);
   if (Pos+len > 8) {
     len = 8-Pos;
@@ -120,12 +121,19 @@ void nixiePrint(int Pos, String Str) {
       displayMem.lword |= bitmask;
     }
   }
-  _PF(MODULE"Printed: %s\n", str);
-  _PF(MODULE"Display mem: 0x%016llX\n", displayMem.lword);
+//  _PF(MODULE"Printed to Nixies: %s\n", str);
+//  _PF(MODULE"Display mem: 0x%016llX\n", displayMem.lword);
 }
 
 void setupNixie() {
   int i, j;
+
+  pinMode(PIN_LE, OUTPUT);
+  pinMode(PIN_SHDN, OUTPUT);
+  digitalWrite(PIN_SHDN, LOW); // HIGH = ON 
+
+  SPI.begin();
+  SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE3));
 
   displayMem.lword = 0ULL;
   for (i=0; i<6; i++)
@@ -138,23 +146,13 @@ void setupNixie() {
         digitMask[i] &= ~(1ULL << (digitBitNum[i][j]-1));
       }
     }
-    _PF(MODULE"Mask %d: 0x%016llX\n", i, digitMask[i]);
   }
   for (i=0; i<2; i++)
   {
     digitMask[6+i] = (uint64_t)-1;  // all bits to 1
     digitMask[6+i] &= ~(1ULL << (digitBitNum[6][0+2*i]-1));
     digitMask[6+i] &= ~(1ULL << (digitBitNum[6][1+2*i]-1));
-    _PF(MODULE"Mask %d: 0x%016llX\n", 6+i, digitMask[6+i]);
   }
-  pinMode(PIN_LE, OUTPUT);
-  pinMode(PIN_SHDN, OUTPUT);
-  digitalWrite(PIN_SHDN, LOW); //HIGH = ON 
-
-  SPI.begin();
-  SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
-
-  _PL(MODULE"SPI for nixie shift register initialized");
 }
 
 void loopNixie() {

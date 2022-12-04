@@ -53,7 +53,6 @@ void setupLeds() {
   Leds.begin(); // This initializes the NeoPixel library.
   Leds.setBrightness(50);
   turnLedsOff();
-  _PL("LEDs Initialized");
 }
 
 

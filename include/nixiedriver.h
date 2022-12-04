@@ -26,7 +26,7 @@ extern SPIClass SPI;
 extern void taskNixieUpdate();
 
 // Function prototypes
-void nixiePrint(int Pos, String Str);
+void nixiePrint(int Pos, char *Str);
 void setupNixie();
 void loopNixie();
 
