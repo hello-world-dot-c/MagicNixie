@@ -254,7 +254,7 @@ void taskNixieSlowUpdate() {
   tickCnt++;
 
   if (selfTest) {
-#ifdef DO_ONLY_SELF_TEST
+#if DO_ONLY_SELF_TEST
     if (tickCnt == ND_SECONDS_BY_TICKS(next_full_second)) {
       t_TimeUpdate.disable();
       byte digit = (next_full_second / 5) % 10;
@@ -347,6 +347,7 @@ void nixieFade(bool fade_in, uint16_t speed_ms, uint16_t pause_ms) {
   fadingCtrl.max = ND_MILLISECONDS_BY_TICKS(speed_ms+pause_ms);
   fadingCtrl.fade_max = ND_MILLISECONDS_BY_TICKS(speed_ms);
   fadingCtrl.fading_in = fade_in;
+  _PF(MODULE"Fade in: %d, max: %d, fade_max: %d\n", fade_in, fadingCtrl.max, fadingCtrl.fade_max);
   fadingCtrl.active = true;
   if (fade_in) {
     fadingCtrl.digital_val = LOW;

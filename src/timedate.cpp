@@ -347,10 +347,14 @@ void taskTimeUpdate() {
           stage = 4;
         }
       } else if (showContent == SHOW_TEMP2) {
-        stage = 4;
-        } else if (gConf.dePoison) {
+        if (gConf.dePoison) {
           showContent = SHOW_DEPOISON;
           stage = 1;
+        } else {
+          stage = 4;
+        }
+      } else if (showContent == SHOW_DEPOISON) {
+        stage = 4;
       } else {
         stage = 4;
       }

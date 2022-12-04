@@ -259,12 +259,12 @@ void setup() {
     gConf.nixieBrightness = 100;
     gConf.altDisplayPeriod_s = 55;
     gConf.altDisplayDuration_ms = 4500; 
-    gConf.altFadeSpeed_ms = 800;
+    gConf.altFadeSpeed_ms = 3000;
     gConf.altFadeDarkPause_ms = 400;
-    gConf.antiPoisoningLevel = 1;
-    gConf.ledRed = 30;
-    gConf.ledGreen = 220; 
-    gConf.ledBlue = 60; 
+    gConf.antiPoisoningLevel = 0;
+    gConf.ledRed = 0;
+    gConf.ledGreen = 240; 
+    gConf.ledBlue = 255; 
     gConf.ledBrightness = 50;
     gConf.tempTimeout_s = 100;
     gConf.dePoison = true;
