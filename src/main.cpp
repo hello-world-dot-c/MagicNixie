@@ -95,7 +95,7 @@ String formatBytes(size_t bytes)  // convert sizes in bytes to KB and MB
   return "";
 }
 
-#define MAX_STR 120
+#define MAX_STR 80
 void logPrintf(String fmt, ...)
 {
   static char outstrln[MAX_STR+1] = { '\0' };

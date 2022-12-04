@@ -35,15 +35,18 @@ LOCAL VARIABLES/CLASSES
 LOCAL FUNCTIONS
 ***************************************************************************/
 static void receiveMQTTCallback (char* topic, byte* payload, unsigned int length) {
+#ifdef USE_MQTT_JSON
   StaticJsonDocument<256> doc;
-
-  _PF(MODULE"Message arrived [");
-  _PF(topic);
-  _PF("]: ---\n");
+#endif
+  byte payload_save[100];
+  memcpy(payload_save,payload,length);
+  _PF(MODULE"Message arrived [%s][%d]: [", topic, length);
+  memcpy(payload,payload_save,length);
   for (unsigned int i=0;i<length;i++) {
     _PF("%c", (char)payload[i]);
   }
-  _PF("---\n");
+  _PF("]\n");
+#ifdef USE_MQTT_JSON
   DeserializationError error = deserializeJson(doc, payload, length);
   if (error) {
     _PF(MODULE"JSON parsing failed\n");
@@ -54,6 +57,7 @@ static void receiveMQTTCallback (char* topic, byte* payload, unsigned int length
     _PF("\n");
     _PF("---\n");
   }
+#endif
 }
 
 static IPAddress applyMqttServerIP()
