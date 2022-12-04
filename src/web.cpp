@@ -141,8 +141,15 @@ void handleRoot()
         server.send(200, "text/html", "OK"); // Return OK
       }
       _PF(MODULE"New configuration saved.\n");    
-    }
-    else {
+    } else if (server.hasArg("RESET")) {
+      if (handleApi) {  // Request received via API
+        server.send(200, "text/html", "OK"); // Return OK
+      }
+      _PF(MODULE"Reset triggered.\n");
+      Serial.flush();
+      ESP.restart();
+      delay(100);       
+    } else {
       if (handleApi) {  // Request received via API
         _PF(MODULE"ERROR: Request not understood.\n");
         server.send(200, "text/html", "ERROR"); // Return ERROR
@@ -200,7 +207,9 @@ void handleLoadScript()
         temp += netvars_p->jsname[i];
         if (netvars_p->type == TYPE_BOOL) {
           bool rval = *(bool *)(netvars_p->var);
-          temp += "\").checked = \"";
+          temp += (i==0) ? 
+            "\").checked = " :
+            "\").innerHTML = \"";
           temp += (i==0) ? 
             ((rval) ? "true" : "false") : 
             ((rval) ? "ON"   : "OFF");
@@ -219,7 +228,10 @@ void handleLoadScript()
             temp += rval;
           }
         }
-        temp += "\";\n";
+        if ((netvars_p->type == TYPE_BOOL) && (i == 0))
+          temp += ";\n";
+        else
+          temp += "\";\n";
       }
     }
   }

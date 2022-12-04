@@ -33,7 +33,7 @@
 		</div>	  
 		<div class="col-xs-8" style="background-color:white; ">
 			<div class="slidecontainer" style="">
-				<input type="range" min="1" max="100" value="50" class="slider" id="ledBrightnessSlider" onchange="mySliderFunction('ledbright', this.value)">
+				<input type="range" min="0" max="100" value="50" class="slider" id="ledBrightnessSlider" onchange="mySliderFunction('ledbright', this.value)">
 				<span id="ledBrightnessValue"></span>
 			</div>
 		</div>
@@ -92,7 +92,7 @@
 		</div>	  
 		<div class="col-xs-8" style="background-color:white; ">
 			<div class="slidecontainer" style="">
-				<input type="range" min="1" max="100" value="100" class="slider" id="nixieBrightnessSlider" onchange="mySliderFunction('nixiebright', this.value)">
+				<input type="range" min="0" max="100" value="100" class="slider" id="nixieBrightnessSlider" onchange="mySliderFunction('nixiebright', this.value)">
 				<span id="nixieBrightnessValue"></span>
 			</div>
 		</div>
@@ -128,11 +128,57 @@
 		</div>	  
 	  </div>
 
+	  <div class="row" style="width: 100%; position: absolute; top: 470px;" >
+		<div class="col-xs-12" >
+		<B>Clock Settings </B> <span id="clockSettinsLabel"></span>
+		</div>
+	  </div>	  
+
+	  <!-- 12h display button -->
+	  <div class="row" style="width: 100%; position: absolute; top: 500px; ">
+		<div class="col-xs-8" style="background-color: light-grey; ">
+			<p>12h display <span id="show12hStatus"></span></p>
+		</div>	  
+		<div class="col-xs-4" style="background-color: light-grey; ">
+			<label class="switch">
+			  <input id="show12hDisplayButton" type="checkbox">
+			  <div class="onOff_slider round"></div>
+			</label>
+		</div>
+	  </div>	  
+	  
+	  <!-- Hours leading zeroes button -->
+	  <div class="row" style="width: 100%; position: absolute; top: 530px; ">
+		<div class="col-xs-8" style="background-color: light-grey; ">
+			<p>Hours leading zeroes <span id="leadingZeroesStatus"></span></p>
+		</div>	  
+		<div class="col-xs-4" style="background-color: light-grey; ">
+			<label class="switch">
+			  <input id="hoursLeadingZeroesButton" type="checkbox">
+			  <div class="onOff_slider round"></div>
+			</label>
+		</div>
+	  </div>	  
+	  
+	  <!-- No music at nights button -->
+	  <div class="row" style="width: 100%; position: absolute; top: 560px; ">
+		<div class="col-xs-8" style="background-color: light-grey; ">
+			<p>Play no music at night <span id="quietNightsStatus"></span></p>
+		</div>	  
+		<div class="col-xs-4" style="background-color: light-grey; ">
+			<label class="switch">
+			  <input id="quietNightsButton" type="checkbox">
+			  <div class="onOff_slider round"></div>
+			</label>
+		</div>
+	  </div>	  
+	  
 	  <!-- Save configuration button -->
-	  <div class="row" style="width: 100%; position: absolute; top: 610px;" >
+	  <div class="row" style="width: 100%; position: absolute; top: 640px;" >
 		<div class="col-xs-12" >
 		  <div class="buttoncontainer" >
-			<center><button class="buttonClick" onclick="buttonSubmit('save')">Save </button></center>
+			<left><button class="buttonClick" onclick="buttonSubmit('save')">Save </button></left>
+			<right><button class="buttonClick" onclick="buttonSubmit('reset')">Reset Clock</button></right>
 		  </div>
 		</div>
 	  </div>	  	  

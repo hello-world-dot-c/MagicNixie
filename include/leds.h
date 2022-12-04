@@ -18,6 +18,7 @@
 #ifndef _LEDS_H_
 #define _LEDS_H_
 
+extern bool disableLEDsUpdate;
 
 // Task callback methods prototypes
 extern void taskLedsUpdate();

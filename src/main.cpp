@@ -251,7 +251,7 @@ void setup() {
   if (!readConfig()) {
     memset(&gConf, 0, sizeof(gConf_t));
     gConf.use12hDisplay = false;
-    gConf.omitLeading0Hour = false;
+    gConf.showLeading0Hour = true;
     gConf.useSoftBlend = true;
     gConf.syncRTC = true;
     gConf.quietNights = true;

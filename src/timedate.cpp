@@ -421,10 +421,10 @@ void taskTimeFastUpdate() {
     } else {
       hour = myTZ.hour();
     }
-    if (gConf.omitLeading0Hour) {
-      sprintf(timeStr, "%2d", hour);
-    } else {
+    if (gConf.showLeading0Hour) {
       sprintf(timeStr, "%02d", hour);
+    } else {
+      sprintf(timeStr, "%2d", hour);
     }
     this_second = myTZ.second();
     singles = this_second % 10;

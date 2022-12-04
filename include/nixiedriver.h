@@ -30,6 +30,7 @@ void taskNixieSlowUpdate();
 void nixiePrint(int Pos, char *Str, uint8_t blending);
 void nixieFade(bool fade_in, uint16_t speed_ms, uint16_t pause_ms);
 bool nixieFadeFinished();
+void nixieTurnOnOffPwm(boolean);
 void setupNixie();
 
 #endif // _NIXIEDRIVER_H_

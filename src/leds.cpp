@@ -33,6 +33,7 @@ DEFINITIONS AND SETTINGS
 GLOBAL VARIABLES/CLASSES
 ***************************************************************************/
 Adafruit_NeoPixel Leds = Adafruit_NeoPixel(NUMPIXELS, PIN_PWM1, NEO_GRB + NEO_KHZ800);
+bool disableLEDsUpdate = false;
 
 
 /**************************************************************************
@@ -96,8 +97,7 @@ void taskLedsUpdate() {
       updateNext = true;
       next_full_second += LEDS_UPDATE_PERIOD_S;
     }
-  }
-  else {
+  } else {
     if (br != gConf.ledBrightness) {
       br = gConf.ledBrightness;
       Leds.setBrightness(gConf.ledBrightness);
@@ -110,12 +110,15 @@ void taskLedsUpdate() {
       updateNext = true;
       next_full_second += LEDS_UPDATE_PERIOD_S;
     }
-    if (updateNext) {
+
+    if (updateNext && !disableLEDsUpdate) {
       updateNext = false;
       r=gConf.ledRed;
       g=gConf.ledGreen;
       b=gConf.ledBlue;
+      nixieTurnOnOffPwm(false);
       setAllLeds(r,g,b);
+      nixieTurnOnOffPwm(true);
     }
   }
 }

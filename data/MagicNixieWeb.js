@@ -74,33 +74,65 @@ function buttonSubmit(button)
 	{
 		var valStr = "SAVE=Save configuration";
 	}
+	else if( button === 'reset' )
+	{
+		var valStr = "RESET=Reset clock";
+	}
 	client.open("POST", "/", true);
 	client.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 	client.send(valStr);
 }
 
-// Captures the blending ON/OFF event.
+// Captures the switches ON/OFF events.
 document.addEventListener('DOMContentLoaded', function () 
 {
-	var checkbox = document.querySelector('input[type="checkbox"]');
+	var checkboxes = document.querySelectorAll('input[type="checkbox"]');
 
-	checkbox.addEventListener('change', function () 
-	{
-		var client = new XMLHttpRequest();		
-		if (checkbox.checked) 
-		{
-			//Turn blending ON
-			var valStr = "BLEND=1";
-			document.getElementById("blendingStatus").innerHTML = "ON";
-		} 
-		else 
-		{
-			//Turn blending OFF
-			var valStr = "BLEND=0";
-			document.getElementById("blendingStatus").innerHTML = "OFF";			
-		}
-		client.open("POST", "/", true);
-		client.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-		client.send(valStr);	
-	});
+    for (var i = 0; i < checkboxes.length; i++) {
+        checkboxes[i].addEventListener('change', function (event) 
+        {
+            var valStrNum = "";
+            var valStr = "";
+            if (this.checked) 
+            {
+                //Turn switch ON
+                valStrNum = "1";
+                valStr = "ON";
+            } 
+            else 
+            {
+                //Turn switch OFF
+                valStrNum = "0";
+                valStr = "OFF";			
+            }
+            var varStrNum = "";
+            var varStr = "";
+            if (event.target.id === 'blendingOnOffButton')
+            {
+                varStrNum = "BLEND";
+                varStr = "blendingStatus";
+            }
+            if (event.target.id === 'show12hDisplayButton')
+            {
+                varStrNum = "USE12HDISP";
+                varStr = "show12hStatus";
+            }
+            if (event.target.id === 'hoursLeadingZeroesButton')
+            {
+                varStrNum = "SHOWLEAD0";
+                varStr = "leadingZeroesStatus";
+            }
+            if (event.target.id === 'quietNightsButton')
+            {
+                varStrNum = "QUIETNIGHTS";
+                varStr = "qietNightsStatus";
+            }
+            valStrNum = varStrNum + "=" + valStrNum;
+            document.getElementById(varStr).innerHTML = valStr;
+            var client = new XMLHttpRequest();		
+            client.open("POST", "/", true);
+            client.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            client.send(valStrNum);
+        });
+    }
 });

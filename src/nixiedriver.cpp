@@ -47,7 +47,15 @@ DEFINITIONS AND SETTINGS
 #error Cannot do the blend with the given settings
 #endif
 
+#define PWM_FREQUENCY 400  // reduce PWM freuency for lower EMI
+
+// if defined and set to 1, use PM on the SHDN pin for dimming/fading the display,
+// which may cause EMI issues.
+#define USE_SHDWN_PWM_DIMMING  1
+
 #define ANTI_POISONING_SWITCH_PERIOD_S 5
+
+#define LIGHT_SENS_UPDATE_PERIOD_S 20
 
 
 /**************************************************************************
@@ -139,6 +147,9 @@ void taskNixieFastUpdate() {
   static uint64_t dmem_out; // safer to make it static since we hand this data over to SPI transfer
   uint8_t num_phase;
   uint8_t slice_in_phase;
+#if !USE_SHDWN_PWM_DIMMING
+  static uint8_t fade_ticks = 0;
+#endif
 
   // Always start with the last output value (channel 0)
   dmem_out = displayMem[0].lword;
@@ -189,6 +200,20 @@ void taskNixieFastUpdate() {
     dmem_out |= ap_out;
   }
 
+#if !USE_SHDWN_PWM_DIMMING
+  // use dimming by clearing all bits for the shift rgister in a portion
+  // of a 100 ms period that depends on the percentage of the analog value
+  // calculated for PWM.
+  fade_ticks++;
+  if (fade_ticks >= 10)
+    fade_ticks = 0;
+  if (fadingCtrl.active || (gConf.nixieBrightness<100)) {
+    uint8_t percent = (uint8_t)(10ul * (uint32_t)fadingCtrl.analog_val / PWMRANGE);
+    if (fade_ticks >= percent)
+      dmem_out = 0ull; // blank all nicie signals
+  }
+#endif
+
   // Update complete shift register, then latch to outputs
   SPI.transfer(&dmem_out, sizeof(dmem_out));
   digitalWrite(PIN_LE, HIGH);
@@ -196,8 +221,28 @@ void taskNixieFastUpdate() {
 }
 
 
+void nixieTurnOnOffPwm (boolean on) {
+  if (on) {
+    if (fadingCtrl.active || (gConf.nixieBrightness<100)) {
+      analogWriteFreq(PWM_FREQUENCY);
+      analogWrite(PIN_SHDN, fadingCtrl.analog_val);  // PWM to control brightness for all nixies
+      if (fadingCtrl.analog_val < PWMRANGE)
+        disableLEDsUpdate = true;
+      else
+        disableLEDsUpdate = false;
+    } else {
+      digitalWrite(PIN_SHDN, fadingCtrl.digital_val); // Control nixie driver
+      disableLEDsUpdate = false;
+    }
+  } else {
+    digitalWrite(PIN_SHDN, HIGH); // Control nixie driver
+  }
+}
+
+
 void taskNixieSlowUpdate() {
   static uint32_t next_full_second;
+  static uint32_t temp_next_full_second;
   static int tickCnt = 0;
 
   if (t_NixieSlowUpdate.isFirstIteration()) {
@@ -206,6 +251,7 @@ void taskNixieSlowUpdate() {
     selfTest = true;
     _PF(MODULE"Self test started\n");
     next_full_second = 1;
+    temp_next_full_second = 1;
     nixieFade(true,5000, 0);
   }
 
@@ -251,7 +297,7 @@ void taskNixieSlowUpdate() {
   }
 
   // Apply nixie-wide (global) dimming/fading
-  fadingCtrl.analog_max = (gConf.nixieBrightness * PWMRANGE) / 100;
+  fadingCtrl.analog_max = ((int)gConf.nixieBrightness * PWMRANGE) / 100;
   if (gConf.nixieBrightness<100) {
     fadingCtrl.analog_val = fadingCtrl.analog_max;
   }
@@ -272,11 +318,19 @@ void taskNixieSlowUpdate() {
       }
     }
   }
-  if (fadingCtrl.active || (gConf.nixieBrightness<100)) {
-    analogWrite(PIN_SHDN, fadingCtrl.analog_val);  // PWM to control brightness for all nixies
-  } else {
-    digitalWrite(PIN_SHDN, fadingCtrl.digital_val); // Control nixie driver
+
+#if USE_SHDWN_PWM_DIMMING
+  nixieTurnOnOffPwm(true);
+#else
+  digitalWrite(PIN_SHDN, HIGH); // Nixie driver is permanent on
+  disableLEDsUpdate = false; // protecting LED updates from high EMI not needed
+#endif
+
+  if (tickCnt == ND_SECONDS_BY_TICKS(temp_next_full_second)) {
+    temp_next_full_second += LIGHT_SENS_UPDATE_PERIOD_S;
+    _PF(MODULE"Analog read: %d\n", analogRead(A0));
   }
+
 }
 
 
