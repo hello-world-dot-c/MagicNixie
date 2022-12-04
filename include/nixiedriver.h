@@ -23,8 +23,8 @@
 extern SPIClass SPI;
 
 // Task callback methods prototypes
-extern void taskNixieFastUpdate();
-extern void taskNixieSlowUpdate();
+void taskNixieFastUpdate();
+void taskNixieSlowUpdate();
 
 // Function prototypes
 void nixiePrint(int Pos, char *Str, uint8_t blending);

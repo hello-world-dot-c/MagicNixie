@@ -98,10 +98,12 @@ static struct {
 
 static struct {
   uint16_t ctr;
+  uint16_t maxctr;
   struct {
     uint8_t cur;
     uint8_t min;
     uint8_t max;
+    uint8_t offs; // Phase offset in percent 
   } digit[6];
 } antiPoisoning;
 
@@ -164,21 +166,25 @@ void taskNixieFastUpdate() {
     }
   }
 
-  // Apply subliminal anti-poisoning, if enabled.
+  // Apply subliminal anti-poisoning, if enabled. Distribute the anti-poisoning so that
+  // it doesn't happen to all digits at the same time.
   if (gConf.antiPoisoningLevel > 0) {
-    if (antiPoisoning.ctr < gConf.antiPoisoningLevel) {
-      uint64_t ap_out = 0;
-      for (int digitpos=0; digitpos<6; digitpos++) {
-        if (antiPoisoning.digit[digitpos].min != 0xFF) {
+    uint64_t ap_out = 0;
+    for (int digitpos=0; digitpos<6; digitpos++) {
+      if (antiPoisoning.digit[digitpos].min != 0xFF) {
+        uint16_t start, end;
+        start = (antiPoisoning.maxctr / 100) * antiPoisoning.digit[digitpos].offs;
+        end = start + gConf.antiPoisoningLevel;
+        if ((antiPoisoning.ctr >= start)  && (antiPoisoning.ctr < end)) {
           ap_out |= (1ULL << (digitBitNum[digitpos][antiPoisoning.digit[digitpos].cur] -1));
         }
       }
-      dmem_out |= ap_out;
     }
     antiPoisoning.ctr++;
-    if (antiPoisoning.ctr>=1000) {
+    if (antiPoisoning.ctr>=antiPoisoning.maxctr) {
       antiPoisoning.ctr = 0;
     }
+    dmem_out |= ap_out;
   }
 
   // Update complete shift register, then latch to outputs
@@ -401,16 +407,20 @@ void setupNixie() {
   }
 
   // Anti-poisoning values
+  antiPoisoning.maxctr = 1000;
   for (int i=0; i<6; i++) {
     antiPoisoning.digit[i].min =   // never use anti-poisoning by default
     antiPoisoning.digit[i].max = 0xFF;
   }
   antiPoisoning.digit[0].min = gConf.use12hDisplay ? 2 : 3;
   antiPoisoning.digit[0].max = 9;
+  antiPoisoning.digit[0].offs = 0;
   antiPoisoning.digit[2].min = 6;
   antiPoisoning.digit[2].max = 9;
+  antiPoisoning.digit[2].offs = 33;
   antiPoisoning.digit[4].min = 6;
   antiPoisoning.digit[4].max = 9;
+  antiPoisoning.digit[4].offs = 66;
   for (int i=0; i<6; i++) {
     antiPoisoning.digit[i].cur = antiPoisoning.digit[i].min;
   }

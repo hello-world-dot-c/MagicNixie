@@ -33,12 +33,13 @@ extern bool gTimeDatesetUpdateRtc;
 extern Timezone myTZ;
 
 // Task callback methods prototypes
-extern void taskSystemTimeUpdate();
-extern void taskTimeUpdate();
-extern void taskTimeFastUpdate();
+void taskSystemTimeUpdate();
+void taskTimeUpdate();
+void taskTimeFastUpdate();
 
 // Function prototypes
 void setupTime();
+bool isTimeValid();
 
 #endif // _TIMEDATE_H_
 /* EOF */

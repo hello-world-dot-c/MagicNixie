@@ -30,8 +30,8 @@ DEFINITIONS AND SETTINGS
 PUBLIC FUNCTIONS
 ***************************************************************************/
 // Task callback methods prototypes
-extern void taskWebConnect();
-extern void taskWebRun();
+void taskWebConnect();
+void taskWebRun();
 
 // Function prototypes
 void setupWeb();

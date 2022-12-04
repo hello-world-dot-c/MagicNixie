@@ -49,11 +49,12 @@ Timezone myTZ;
 LOCAL VARIABLES/CLASSES
 ***************************************************************************/
 #if USE_RTC
-RTC_DS3231 RTC;
+static RTC_DS3231 RTC;
 #endif
-bool setUpdateRtc = false;
-gShowContent_t showContent;
-bool updateTimeAsap = false;
+static bool setUpdateRtc = false;
+static gShowContent_t showContent;
+static bool updateTimeAsap = false;
+static bool timeValid = false;
 
 /**************************************************************************
 LOCAL FUNCTIONS
@@ -174,6 +175,7 @@ void taskSystemTimeUpdate() {
     rtc_available = false;
     setUpdateRtc = true;
     randomSeed((unsigned long)myTZ.ms());
+    timeValid = true;
   }
 
   // Periodically update system time from NTP server if we are online
@@ -336,12 +338,18 @@ void taskTimeFastUpdate() {
         myTZ.dateTime().toCharArray(dtstr,sizeof(dtstr));
         _PF(MODULE"RTC updated, time: %s\n", dtstr); 
         setUpdateRtc = false;
+        timeValid = true;
       } else {
         _PF(MODULE"RTC not updated, FAILED\n"); 
       }
     }
 #endif // USE_RTC
   }
+}
+
+
+bool isTimeValid() {
+  return timeValid;
 }
 
 

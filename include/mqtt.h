@@ -22,9 +22,9 @@
 
 
 // Task callback methods prototypes
-extern void taskMqttConnect();
-extern void taskMqttRun();
-extern void mqttLogPrint(char * outstr);
+void taskMqttConnect();
+void taskMqttRun();
+void mqttLogPrint(char * outstr);
 
 // Function prototypes
 void setupMqtt();

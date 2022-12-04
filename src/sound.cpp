@@ -245,20 +245,29 @@ const char* playmusic(const char *p)
 PUBLIC FUNCTIONS
 ***************************************************************************/
 void taskSoundUpdate() {
+  static bool ready_to_run = false;
   if (t_SoundUpdate.isFirstIteration()) {
-    EasyBuzzer.setPin(PIN_BUZZ);
-    selfTestCnt = 0;
-    selfTest = !gConf.quietNights || 
-      (gConf.quietNights &&
-        ( (myTZ.hour()>=6) && (myTZ.hour()<=22) 
-        )
-      );
-    if (selfTest)
-      _PF(MODULE"Self test started\n");
-    else
-      _PF(MODULE"Night time, self test not started\n");
   }
 
+  if (isTimeValid()) {
+    if (!ready_to_run) {
+      ready_to_run = true;
+      EasyBuzzer.setPin(PIN_BUZZ);
+      selfTestCnt = 0;
+      selfTest = !gConf.quietNights || 
+        (gConf.quietNights &&
+          ( (myTZ.hour()>=6) && (myTZ.hour()<=22) 
+          )
+        );
+      if (selfTest)
+        _PF(MODULE"Self test started\n");
+      else
+        _PF(MODULE"Night time, self test not started\n");
+    }
+  } else {
+    return;
+  }
+  
   static const char *sndptr = NULL;
   static bool play_song = false;
 
