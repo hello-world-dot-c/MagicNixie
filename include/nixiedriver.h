@@ -23,12 +23,14 @@
 extern SPIClass SPI;
 
 // Task callback methods prototypes
-extern void taskNixieUpdate();
+extern void taskNixieFastUpdate();
+extern void taskNixieSlowUpdate();
 
 // Function prototypes
 void nixiePrint(int Pos, char *Str, uint8_t blending);
+void nixieFade(bool fade_in, uint16_t speed_ms, uint16_t pause_ms);
+bool nixieFadeFinished();
 void setupNixie();
-void loopNixie();
 
 #endif // _NIXIEDRIVER_H_
 /* EOF */

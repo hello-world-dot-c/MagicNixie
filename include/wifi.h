@@ -31,7 +31,6 @@ extern void taskMqttRun();
 
 // Function prototypes
 void setupWifi();
-void loopWifi();
 
 #endif // _WIFI_H_
 /* EOF */

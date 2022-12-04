@@ -104,6 +104,10 @@ void setup() {
 
   memset(&gConf, 0, sizeof(gConf_t));
   gConf.useSoftBlend = true;
+  gConf.altDisplayPeriod_s = 45; 
+  gConf.altDisplayDuration_ms = 5000;
+  gConf.altFadeSpeed_ms = 800;
+  gConf.altFadeDarkPause_ms = 400;
   Serial.flush();
   while(!Serial){} // Waiting for serial connection
 

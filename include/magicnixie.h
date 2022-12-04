@@ -34,6 +34,7 @@
 #include <PubSubClient.h>         //https://github.com/knolleary/pubsubclient
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
+#include "EasyBuzzer.h"
 
 // Application includes
 #include "config.h"
@@ -44,6 +45,8 @@
 #include "timedate.h"
 #include "nixiedriver.h"
 #include "leds.h"
+#include "tone.h"
+#include "sound.h"
 
 // Debug output macros
 #ifdef _DEBUG_
@@ -59,10 +62,12 @@
 /**************************************************************************
 DEFINITIONS AND SETTINGS
 ***************************************************************************/
-#define MAGICNIXIE_VERSION "\n\nThis is MagicNixie ver: 2020-10-23 v0.1\n\n" 
 #define SYS_TIME_UPD_PERIOD 600  // main system time update handler is executed every 600 ms
-#define NIXIE_UPD_PERIOD 1  // Nixies updated every 5 ms (200/s)
+#define TIME_UPD_PERIOD 20  // Medium-fast time related functions updated every 20 ms
+#define ND_FAST_UPD_PERIOD 1  // Nixies updated every 1 ms
+#define ND_SLOW_UPD_PERIOD 50  // Nixie driver slow update every 50 ms
 #define LED_UPD_PERIOD 100  // LEDs updated every 100 ms
+#define SOUND_UPD_PERIOD 20  // Sound updated every 20 ms
 
 // EEPROM locations
 #define NVOL_SIZE 4096
@@ -70,11 +75,22 @@ DEFINITIONS AND SETTINGS
 #define NVOL_START_TZ  (NVOL_START_SETTINGS+20)  // length is EEPROM_CACHE_LEN
 
 
+typedef enum {
+  SHOW_TIME,
+  SHOW_DATE,
+  SHOW_TEMP1,
+  SHOW_TEMP2
+} gShowContent_t;
+
 typedef struct {
   bool use12hDisplay;
   bool omitLeading0Hour;  
   bool useSoftBlend;
   bool syncRTC;
+  uint16_t altDisplayPeriod_s;
+  uint16_t altDisplayDuration_ms;  
+  uint16_t altFadeSpeed_ms;
+  uint16_t altFadeDarkPause_ms;
  } gConf_t;
 
 extern gConf_t gConf;

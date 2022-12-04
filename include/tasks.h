@@ -39,11 +39,13 @@ extern Task t_MqttConnect;
 extern Task t_MqttRun;
 extern Task t_WebConnect;
 extern Task t_WebRun;
-extern Task t_NixieUpdate;
+extern Task t_NixieFastUpdate;
+extern Task t_NixieSlowUpdate;
 extern Task t_TimeUpdate;
 extern Task t_TimeFastUpdate;
 extern Task t_SystemTimeUpdate;
 extern Task t_LedsUpdate;
+extern Task t_SoundUpdate;
 
 // Function prototypes
 void setupTasks();

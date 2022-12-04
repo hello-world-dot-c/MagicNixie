@@ -36,9 +36,9 @@ LOCAL FUNCTIONS
 /**************************************************************************
 PUBLIC FUNCTIONS
 ***************************************************************************/
-void taskNixieUpdate() {
+void taskNixieFastUpdate() {
 
-  if (t_NixieUpdate.isFirstIteration()) {
+  if (t_NixieFastUpdate.isFirstIteration()) {
   }
     
 }

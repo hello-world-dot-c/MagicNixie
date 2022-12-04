@@ -22,6 +22,9 @@ DEFINITIONS AND SETTINGS
 ***************************************************************************/
 #define MODULE "*ND: "
 
+#define ND_MILLISECONDS_BY_TICKS(time_ms)  (((time_ms) + ND_SLOW_UPD_PERIOD - 1) / ND_SLOW_UPD_PERIOD)
+#define ND_SECONDS_BY_TICKS(time_s) ND_MILLISECONDS_BY_TICKS(1000*(time_s))
+
 // Definitions for blending parameters
 #define NIXIE_BLENDS 2
 
@@ -31,7 +34,7 @@ DEFINITIONS AND SETTINGS
 #define NIXIE_BLEND1_PHASES 12
 #define NIXIE_BLEND1_SLICES 12  // number of slices per phase
 #define NIXIE_BLEND1_SLICES_SHIFT 1  // number of slices shift per phase
-#define NIXIE_BLEND1_TIME (NIXIE_UPD_PERIOD*NIXIE_BLEND_TICKS_PER_SLICE*NIXIE_BLEND1_PHASES*NIXIE_BLEND1_SLICES)
+#define NIXIE_BLEND1_TIME (ND_FAST_UPD_PERIOD*NIXIE_BLEND_TICKS_PER_SLICE*NIXIE_BLEND1_PHASES*NIXIE_BLEND1_SLICES)
 #if  NIXIE_BLEND1_TIME != NIXIE_BLEND1_SPEED
 #error Cannot do the blend with the given settings
 #endif
@@ -39,10 +42,11 @@ DEFINITIONS AND SETTINGS
 #define NIXIE_BLEND2_PHASES 22
 #define NIXIE_BLEND2_SLICES 22  // number of slices per phase
 #define NIXIE_BLEND2_SLICES_SHIFT 1  // number of slices shift per phase
-#define NIXIE_BLEND2_TIME (NIXIE_UPD_PERIOD*NIXIE_BLEND_TICKS_PER_SLICE*NIXIE_BLEND2_PHASES*NIXIE_BLEND2_SLICES)
+#define NIXIE_BLEND2_TIME (ND_FAST_UPD_PERIOD*NIXIE_BLEND_TICKS_PER_SLICE*NIXIE_BLEND2_PHASES*NIXIE_BLEND2_SLICES)
 #if  NIXIE_BLEND2_TIME != NIXIE_BLEND2_SPEED
 #error Cannot do the blend with the given settings
 #endif
+
 
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
@@ -79,6 +83,19 @@ static struct {
   uint16_t blend_phases; 
 } displayMem[NIXIE_BLENDS+1];
 
+static struct {
+  bool     active;
+  bool     fading_in;
+  uint16_t ctr;
+  uint16_t max;
+  uint16_t fade_max;
+  int      analog_val;
+  uint8_t  digital_val;
+} fadingCtrl;
+
+static bool selfTest = false;
+static int selfTestCnt;
+
 
 /**************************************************************************
 LOCAL FUNCTIONS
@@ -88,8 +105,8 @@ LOCAL FUNCTIONS
 /**************************************************************************
 PUBLIC FUNCTIONS
 ***************************************************************************/
-void taskNixieUpdate() {
-  if (t_NixieUpdate.isFirstIteration()) {
+void taskNixieFastUpdate() {
+  if (t_NixieFastUpdate.isFirstIteration()) {
   }
   static uint64_t dmem_out;
   static uint8_t blend_ticks = 1;
@@ -127,9 +144,86 @@ void taskNixieUpdate() {
   SPI.transfer(&dmem_out, sizeof(dmem_out));
   digitalWrite(PIN_LE, HIGH);
   digitalWrite(PIN_LE, LOW);
-  digitalWrite(PIN_SHDN, HIGH); // Turn on nixie driver
 }
 
+
+void taskNixieSlowUpdate() {
+  static byte next_full_second;
+
+  if (t_NixieSlowUpdate.isFirstIteration()) {
+    t_TimeFastUpdate.disable();  // stop time display, normally not necessary at this time
+    selfTestCnt = 0;
+    selfTest = true;
+    _PL(MODULE"Self test started");
+    next_full_second = 1;
+    nixieFade(true,5000, 0);
+  }
+
+  if (selfTest) {
+    selfTestCnt++;
+    if (selfTestCnt == ND_SECONDS_BY_TICKS(next_full_second)) {
+      if (next_full_second == 12) {  // self test finished
+        t_TimeFastUpdate.enable();  // start time display
+        selfTest = false;
+      } else {
+        byte digit;
+        if (next_full_second==1)
+          digit = 10;
+        else
+          digit = 11-next_full_second;
+        char sep = (digit % 2) ? ' ' : ':';
+        char str[10];
+        if (digit==10)
+          strcpy(str, "10:10:10");
+        else
+          sprintf(str, "%d%d%c%d%d%c%d%d", digit, digit, sep, digit, digit, sep, digit, digit);
+        nixiePrint(0, str, 0);
+        next_full_second++;
+      }
+    }
+  }
+
+  if (fadingCtrl.active) {
+    fadingCtrl.ctr++;
+    if (fadingCtrl.fade_max == fadingCtrl.ctr) {
+      fadingCtrl.active = false;
+      if (fadingCtrl.fading_in) {
+        fadingCtrl.digital_val = HIGH;
+      } else {
+        fadingCtrl.digital_val = LOW;
+      }
+    }
+    if (fadingCtrl.ctr <= fadingCtrl.fade_max) {
+      fadingCtrl.analog_val = (fadingCtrl.ctr * PWMRANGE) / fadingCtrl.fade_max;
+      if (!fadingCtrl.fading_in) {
+        fadingCtrl.analog_val = PWMRANGE - fadingCtrl.analog_val;
+      }
+    }
+  }
+  if (fadingCtrl.active) {
+    analogWrite(PIN_SHDN, fadingCtrl.analog_val);  // PWM to control brightness for all nixies
+  } else {
+    digitalWrite(PIN_SHDN, fadingCtrl.digital_val); // Control nixie driver
+  }
+}
+
+
+void nixieFade(bool fade_in, uint16_t speed_ms, uint16_t pause_ms) {
+  fadingCtrl.ctr = 0;
+  fadingCtrl.max = ND_MILLISECONDS_BY_TICKS(speed_ms+pause_ms);
+  fadingCtrl.fade_max = ND_MILLISECONDS_BY_TICKS(speed_ms);
+  fadingCtrl.fading_in = fade_in;
+  fadingCtrl.active = true;
+  if (fade_in) {
+    fadingCtrl.digital_val = LOW;
+  } else {
+    fadingCtrl.digital_val = HIGH;
+  }
+}
+
+bool nixieFadeFinished() {
+  return (!fadingCtrl.active);
+}
 
 void nixiePrint(int Pos, char *Str, uint8_t blending) {
   int i, len, digitpos;
@@ -189,10 +283,14 @@ void nixiePrint(int Pos, char *Str, uint8_t blending) {
       }
     }
   }
-  // Start blending if printed to channels >0
+  // Start blending if printed to channels >0, stop all blending if writing to channel 0
   if (blending > 0) {
     displayMem[blending].blend_ctr = 0;
     displayMem[blending].blend_active = true;
+  } else {
+    for (i=1; i<NIXIE_BLENDS+1; i++) {
+      displayMem[i].blend_active = false;
+    }
   }
 }
 
@@ -205,6 +303,7 @@ void setupNixie() {
   SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE3));
 
   memset(displayMem, 0, sizeof(displayMem));
+  memset(&fadingCtrl, 0, sizeof(fadingCtrl));
   // Set up blend parameters
 #if NIXIE_BLENDS>=1
   displayMem[1].blend_phases = NIXIE_BLEND1_PHASES;
@@ -220,7 +319,7 @@ void setupNixie() {
 #error No initialization for blending pattern
 #endif
 
-  // Set up the mask values to clear full digits 
+  // Set up the mask values to clear full digit positions
   for (int i=0; i<6; i++) {
     digitMask[i] = (uint64_t)-1;  // all bits to 1
     for (int j=0; j<10; j++) {
@@ -236,6 +335,4 @@ void setupNixie() {
   }
 }
 
-void loopNixie() {
-}
 /* EOF */

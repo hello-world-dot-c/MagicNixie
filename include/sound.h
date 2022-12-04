@@ -24,7 +24,6 @@ extern void taskSoundUpdate();
 
 // Function prototypes
 void setupSound();
-void loopSound();
 
 #endif // _LEDS_H_
 /* EOF */

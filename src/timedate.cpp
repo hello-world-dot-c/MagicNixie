@@ -55,6 +55,8 @@ LOCAL VARIABLES/CLASSES
 RTC_DS3231 RTC;
 #endif
 bool setUpdateRtc = false;
+gShowContent_t showContent;
+bool updateTimeAsap = false;
 
 /**************************************************************************
 LOCAL FUNCTIONS
@@ -172,6 +174,7 @@ void taskSystemTimeUpdate() {
     ntp_available = true;
     rtc_available = false;
     setUpdateRtc = true;
+    randomSeed((unsigned long)myTZ.ms());
   }
 
   // Periodically update system time from NTP server if we are online
@@ -231,8 +234,7 @@ void taskSystemTimeUpdate() {
         }
       } else {
         _PL(MODULE"RTC read time FAILED!");
-        rtc_update_ticks = RTC_UPDATE_TICKS;  // update again later
-        rtc_update_ticks = 5;  // try immediately next call until we are successful
+        rtc_update_ticks = 2000/SYS_TIME_UPD_PERIOD;  // try again in 2 seconds until we are successful
       }
     }
   }
@@ -241,9 +243,50 @@ void taskSystemTimeUpdate() {
 
 
 void taskTimeUpdate() {
+  static uint32_t stageCtr;
+  static uint32_t stageNext;
+  static uint8_t stage;
   if (t_TimeUpdate.isFirstIteration()) {
+    showContent = SHOW_TIME;
+    stageCtr = 0;
+    stageNext = 1000*gConf.altDisplayPeriod_s / TIME_UPD_PERIOD;
+    stage = 0;
   }
 
+  stageCtr++;
+  if (stageCtr >= stageNext) {
+    if (stage == 0) {
+      nixieFade(false, gConf.altFadeSpeed_ms, gConf.altFadeDarkPause_ms);
+      stage = 1;
+    } else if (stage == 3) {
+      nixieFade(false, gConf.altFadeSpeed_ms, gConf.altFadeDarkPause_ms);
+      stage = 4;
+    }
+  }
+  if (nixieFadeFinished()) {
+    if (stage==1) {
+      showContent = SHOW_DATE;
+      char str[10];
+      sprintf(str, "%2d.%2d.%02d", myTZ.day(), myTZ.month(), myTZ.year() % 100 );
+      _PF(MODULE"Showing date: %s\n", str);
+      nixiePrint(0, str, 0);
+      nixieFade(true, gConf.altFadeSpeed_ms, 0);
+      stage = 2;
+    } else if (stage==2) {
+      stageCtr = 0;
+      stageNext = gConf.altDisplayDuration_ms / TIME_UPD_PERIOD;
+      stage = 3;
+    } else if (stage==4) {
+      showContent = SHOW_TIME;
+      nixieFade(true, gConf.altFadeSpeed_ms, 0);
+      updateTimeAsap = true;
+      stage = 5;
+    } else if (stage==5) {
+      stageCtr = 0;
+      stageNext = 1000*gConf.altDisplayPeriod_s / TIME_UPD_PERIOD;
+      stage = 0;
+    }
+  }
 }
 
 
@@ -255,7 +298,10 @@ void taskTimeFastUpdate() {
   uint8_t tens;
   uint8_t hour;
 
-  if (secondChanged()) {
+  if (showContent != SHOW_TIME)
+    return;
+
+  if (secondChanged() || updateTimeAsap) {
     if (gConf.use12hDisplay) {
       hour = myTZ.hourFormat12();
     } else {
@@ -271,7 +317,7 @@ void taskTimeFastUpdate() {
     tens = this_second / 10;
     separation_char = (singles % 2) ? ' ' : ':';
 
-    if (gConf.useSoftBlend) {
+    if (gConf.useSoftBlend && !updateTimeAsap) {
       sprintf(timeStr+2, "*%02d*%1d*", myTZ.minute(), tens);
       nixiePrint(0, timeStr, 2);
       sprintf(timeStr, "**%c**%c*%1d", separation_char, separation_char, singles);
@@ -280,9 +326,10 @@ void taskTimeFastUpdate() {
       sprintf(timeStr+2, "%c%02d%c%02d", separation_char, myTZ.minute(), separation_char, myTZ.second());
       nixiePrint(0, timeStr, 0);
     }
+    updateTimeAsap = false;
 
 #if USE_RTC
-    if (setUpdateRtc) {
+    if (setUpdateRtc && gConf.syncRTC) {
       if (setRTCDateTime(myTZ.hour(), myTZ.minute(), myTZ.second(), myTZ.day(), myTZ.month(), myTZ.year())) {
         _PL(MODULE"RTC updated, time: "+myTZ.dateTime()); 
         setUpdateRtc = false;
@@ -298,6 +345,4 @@ void taskTimeFastUpdate() {
 void setupTime() {
 }
 
-void loopTime() {
-}
 /* EOF */

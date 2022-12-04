@@ -98,6 +98,4 @@ void setupLeds() {
   turnLedsOff();
 }
 
-void loopLeds() {
-}
 /* EOF */

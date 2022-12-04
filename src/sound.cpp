@@ -285,6 +285,4 @@ void taskSoundUpdate() {
 void setupSound() {
 }
 
-void loopSound() {
-}
 /* EOF */

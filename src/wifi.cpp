@@ -78,6 +78,7 @@ void setupWifi() {
 
   //set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
   wifiManager.setAPCallback(configModeCallback);
+  WiFi.hostname(MY_NAME);
 
   //fetches ssid and pass and tries to connect
   //if it does not connect it starts an access point with the specified name
@@ -94,6 +95,4 @@ void setupWifi() {
   _PL(MODULE"Connected to SSID " + WiFi.SSID() + ", own IP is " + WiFi.localIP().toString());
 }
 
-void loopWifi() {
-}
 /* EOF */

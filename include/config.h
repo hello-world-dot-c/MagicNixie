@@ -18,8 +18,12 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
+// Name of the device
+#define MY_NAME "MagicNixie"
 // Name of AP when in WifiManager config mode
-#define WIFIAPNAME "MagicNixieConfigAP"
+#define WIFIAPNAME MY_NAME "ConfigAP"
+// Hello prompt
+#define MAGICNIXIE_VERSION "\n\nThis is " MY_NAME " ver: 2020-10-23 v0.1\n\n" 
 
 // MQTT settings
 #define MQTT_SERVER "homeslave.fritz.box"

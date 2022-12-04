@@ -24,7 +24,6 @@ extern void taskLedsUpdate();
 
 // Function prototypes
 void setupLeds();
-void loopLeds();
 
 #endif // _LEDS_H_
 /* EOF */

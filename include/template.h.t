@@ -24,7 +24,7 @@
 extern SPIClass SPI;
 
 // Task callback methods prototypes
-extern void taskNixieUpdate();
+extern void taskNixieFastUpdate();
 
 // Function prototypes
 void setupNixie();

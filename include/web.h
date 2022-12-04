@@ -27,7 +27,6 @@ extern void taskWebRun();
 
 // Function prototypes
 void setupWeb();
-void loopWeb();
 
 #endif // _MQTT_H_
 /* EOF */

@@ -691,6 +691,4 @@ void setupWeb() {
   	 
 }
 
-void loopWeb() {
-}
 /* EOF */

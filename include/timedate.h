@@ -38,7 +38,6 @@ extern void taskTimeFastUpdate();
 
 // Function prototypes
 void setupTime();
-void loopTime();
 
 #endif // _TIMEDATE_H_
 /* EOF */

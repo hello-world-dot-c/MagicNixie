@@ -27,7 +27,6 @@ extern void taskMqttRun();
 
 // Function prototypes
 void setupMqtt();
-void loopMqtt();
 
 #endif // _MQTT_H_
 /* EOF */
