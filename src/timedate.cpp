@@ -27,24 +27,25 @@ DEFINITIONS AND SETTINGS
 #define USE_NTP 1
 #endif
 #ifndef USE_RTC
-#define USE_RTC 0
+#define USE_RTC 1
 #endif
 
-#define NTP_UPDATE_TICKS  (60*1000/SYS_TIME_UPD_PERIOD)  // 60 seconds
-#define NTP_SERVER_STR  "192.168.1.1"
-#define NTP_UDP_REMOTE_PORT 123 // port for NTP requests at the server
-#define NTP_UDP_LISTEN_PORT 8888 // port to listen to for NTP responses
-#define NTP_PACKET_SIZE 48 // NTP time stamp is in the first 48 bytes of the message
-#define SEVENZYYEARS 2208988800UL
+#define TIME_ZONE_STR  F("de")
+
+#define NTP_SERVER_STR  F("fritz.box") //F("192.168.1.1")
+#define NTP_UPDATE_PERIOD  600 // 10 minutes
+#define NTP_UPDATE_TICKS  (NTP_UPDATE_PERIOD*1000/SYS_TIME_UPD_PERIOD)
 
 // sets how often the main system time update handler is called before
-// the system time is attempted to be updated from the RTC again
-#define RTC_UPDATE_TICKS     12  // numbers of SYS_TIME_UPD_PERIOD
+// the system time is attempted to be updated from the RTC again.
+#define RTC_UPDATE_PERIOD   25  // 25 seconds
+#define RTC_UPDATE_TICKS  (RTC_UPDATE_PERIOD*1000/SYS_TIME_UPD_PERIOD)
 
 
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
 ***************************************************************************/
+Timezone myTZ;
 
 
 /**************************************************************************
@@ -53,15 +54,6 @@ LOCAL VARIABLES/CLASSES
 #if USE_RTC
 RTC_DS3231 RTC;
 #endif
-#if USE_NTP
-AsyncUDP udp;
-#endif
-static char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-
-void Timezone::stopNTPUpdates() {
-  setInterval(); // disable library NTP updates
-}
-Timezone myTZ;
 
 /**************************************************************************
 LOCAL FUNCTIONS
@@ -136,11 +128,13 @@ bool getRTCTime(rtcTime_t *curTime) {
 PUBLIC FUNCTIONS
 ***************************************************************************/
 void taskSystemTimeUpdate() {
+  static time_t last_saved_update_time;
+  time_t last_update_time;
   static bool ntp_available = false;
-  static bool ntp_init = false;
+  static bool ntp_update_triggered = false;
   static int ntp_update_ticks = 1; // update asap
-  static int rtc_update_ticks = RTC_UPDATE_TICKS;
-  static IPAddress ntpServerIP;
+  static int rtc_update_ticks = 1; // update asap
+  static bool rtc_set_current = false; // flag to request RTC to be written/updated
   rtcTime_t rtc_time;
 
   if (t_SystemTimeUpdate.isFirstIteration()) {
@@ -151,60 +145,59 @@ void taskSystemTimeUpdate() {
       _PL(MODULE"Could not find RTC");
     Wire.setClock(50000); // I2C works better at reduced speed
 #endif // USE_RTC
-    myTZ.setLocation(F("de"));
-    myTZ.stopNTPUpdates();
+//    setDebug(DEBUG, Serial);
+    setDebug(NONE);
+    myTZ.setLocation(TIME_ZONE_STR);
+    setInterval(0); // disable automatic updates
+#if USE_NTP
+    setServer(NTP_SERVER_STR);
+    ntp_available = true;
+#endif // USE_NTP
   }
 
 #if USE_NTP
-  // As soon as WiFi is available, set up the NTP listener
-  if (!ntp_init) {
-    if (WiFi.status() == WL_CONNECTED) {
-      if (ntpServerIP.fromString(NTP_SERVER_STR)) {
-        // it is a valid IP address
-        ntp_available = true;
+  ntp_available = (WiFi.status() == WL_CONNECTED);
 
-        if(udp.listen(NTP_UDP_LISTEN_PORT)) {
-            Serial.print("UDP Listening on IP: ");
-            Serial.println(WiFi.localIP());
-            udp.onPacket([](AsyncUDPPacket packet) {
-              if (!packet.isBroadcast() && !packet.isMulticast() &&
-                (packet.remoteIP() == ntpServerIP) &&
-                (packet.length() >= NTP_PACKET_SIZE)
-              ) {
-                uint8_t *pdata = packet.data();
-                // this is NTP time (seconds since Jan 1 1900):
-                uint32_t secsSince1900 = ((uint32_t)word(pdata[40], pdata[41])) << 16 | word(pdata[42], pdata[43]);
-                uint32_t currentEpoc = secsSince1900 - SEVENZYYEARS;
-                byte h = hour(currentEpoc);
-                byte m = minute(currentEpoc);
-                byte s = second(currentEpoc);
-                byte d = day(currentEpoc);
-                byte mon = month(currentEpoc);
-                word y = year(currentEpoc);
-//                  bool update_rtc = setRTCDateTime(h, m, s, d, mon, y);
-                _PF(MODULE"NTP Update Time: %02d:%02d:%02d %s, the %02d.%02d.%04d\n", 
-                  h, m, s, daysOfTheWeek[weekday()-1], d, mon, y);
-              }
-            });
-        }
-      }
-      ntp_init = true;
-      _PL(MODULE"NTP initialized since WiFi became available");
+  last_update_time = lastNtpUpdateTime();
+  if (last_update_time != last_saved_update_time) {
+    _PL(MODULE"NTP update successful, current time: "+myTZ.dateTime());
+    last_saved_update_time = last_update_time;
+    rtc_set_current = true;
+    ntp_update_triggered = false;
+  }
+
+  // Periodically update system time from NTP server
+  if (ntp_available) {
+    ntp_update_ticks--;
+    if (ntp_update_ticks==0) {
+      updateNTP();
+      ntp_update_triggered = true;
+      ntp_update_ticks = NTP_UPDATE_TICKS;
+    } else if (ntp_update_triggered) {
+      _PL(MODULE"NTP update timeout!");
+      ntp_update_triggered = false;
+      ntp_update_ticks = 1;  // try immediately next call until we are successful
     }
   }
 #endif // USE_NTP
 
 #if USE_RTC
+  if (rtc_set_current) {
+    if (setRTCDateTime(myTZ.hour(), myTZ.minute(), myTZ.second(), myTZ.day(), myTZ.month(), myTZ.year())) {
+      _PL(MODULE"RTC updated, time: "+myTZ.dateTime()); 
+      rtc_set_current = false;
+    } else {
+      _PL(MODULE"RTC not updated, FAILED"); 
+    }
+  }
   // Periodically update system time from RTC
   rtc_update_ticks--;
   if (rtc_update_ticks==0) {
     _PL(MODULE"RTC update scheduled");
     if (getRTCTime(&rtc_time)) {
-      setTime(rtc_time.hours, rtc_time.minutes, rtc_time.seconds,
+      myTZ.setTime(rtc_time.hours, rtc_time.minutes, rtc_time.seconds,
         rtc_time.day, rtc_time.month, rtc_time.year);
-      _PF(MODULE"RTC Update Time: %02d:%02d:%02d %s, the %02d.%02d.%04d\n", 
-        rtc_time.hours, rtc_time.minutes, rtc_time.seconds,
-        daysOfTheWeek[rtc_time.day_of_week], rtc_time.day, rtc_time.month, rtc_time.year);
+      _PL(MODULE"RTC update time: "+myTZ.dateTime()); 
       rtc_update_ticks = RTC_UPDATE_TICKS;  // update again later
     } else {
       _PL(MODULE"RTC get update failed!");
@@ -212,38 +205,6 @@ void taskSystemTimeUpdate() {
     }
   }
 #endif // USE_RTC
-
-#if USE_NTP
-  // Periodically update system time from NTP server
-  if (ntp_available && ntp_init) {
-    ntp_update_ticks--;
-    if (ntp_update_ticks==0) {
-      byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold packet data
-      // Initialize values needed to form NTP request
-      memset(packetBuffer, 0, NTP_PACKET_SIZE);
-      packetBuffer[0] = 0b11100011;   // LI, Version, Mode
-      packetBuffer[1] = 0;     // Stratum, or type of clock
-      packetBuffer[2] = 6;     // Polling Interval
-      packetBuffer[3] = 0xEC;  // Peer Clock Precision
-      // 8 bytes of zero for Root Delay & Root Dispersion
-      packetBuffer[12]  = 49;
-      packetBuffer[13]  = 0x4E;
-      packetBuffer[14]  = 49;
-      packetBuffer[15]  = 52;
-
-      // all NTP fields have been given values, now
-      // you can send a packet requesting a timestamp:
-      if (NTP_PACKET_SIZE ==
-        udp.writeTo(packetBuffer, NTP_PACKET_SIZE, ntpServerIP, NTP_UDP_REMOTE_PORT)) {
-        _PL(MODULE"NTC request sent to "+ntpServerIP.toString());
-        ntp_update_ticks = NTP_UPDATE_TICKS;
-      } else {
-        _PL(MODULE"NTC request FAILED to send to "+ntpServerIP.toString());
-        ntp_update_ticks = 1;  // try immediately next call until we are successful
-      }
-    }
-  }
-#endif // USE_NTP
 }
 
 
@@ -269,24 +230,6 @@ void taskTimeUpdate() {
 
 
 void setupTime() {
-/*
-  if (rtc.lostPower()) {
-    Serial.println("RTC lost power, let's set the time!");
-    // When time needs to be set on a new device, or after a power loss, the
-    // following line sets the RTC to the date & time this sketch was compiled
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    // This line sets the RTC with an explicit date & time, for example to set
-    // January 21, 2014 at 3am you would call:
-    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-  }
-
-  // When time needs to be re-set on a previously configured device, the
-  // following line sets the RTC to the date & time this sketch was compiled
-  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  // This line sets the RTC with an explicit date & time, for example to set
-  // January 21, 2014 at 3am you would call:
-  // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-*/
 }
 
 void loopTime() {

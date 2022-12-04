@@ -78,7 +78,7 @@ String formatBytes(size_t bytes)  // convert sizes in bytes to KB and MB
 
 void setup() {
   // Init UART for debugging output.
-  Serial.begin(115200);
+  Serial.begin(921600);
 
   // Initialize critical hardware first
   setupLeds();
