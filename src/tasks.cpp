@@ -18,6 +18,7 @@
 #include "magicnixie.h"
 #include <TaskScheduler.h>
 
+#define MODULE "*TS: "
 
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
@@ -25,9 +26,11 @@ GLOBAL VARIABLES/CLASSES
 // Tasks
 Task t_WiFiConnect(5000, TASK_FOREVER, &taskWiFiConnect);
 Task t_MqttConnect(5000, TASK_FOREVER, &taskMqttConnect);
+Task t_WebConnect(5000, TASK_FOREVER, &taskWebConnect);
 Task t_NixieUpdate(1000, TASK_FOREVER, &taskNixieUpdate);
 Task t_LedsUpdate(1000, TASK_FOREVER, &taskLedsUpdate);
-Task t_MqttRun(50, TASK_FOREVER, &taskMqttRun);
+Task t_MqttRun(200, TASK_FOREVER, &taskMqttRun);
+Task t_WebRun(50, TASK_FOREVER, &taskWebRun);
 
 
 /**************************************************************************
@@ -50,17 +53,18 @@ PUBLIC FUNCTIONS
 ***************************************************************************/
 void setupTasks() {
   ts.init();
-  _PL("Initialized scheduler");
+  _PL(MODULE"Initialized scheduler");
   ts.addTask(t_WiFiConnect);
   ts.addTask(t_MqttConnect);
+  ts.addTask(t_WebConnect);
   ts.addTask(t_NixieUpdate);
   ts.addTask(t_LedsUpdate);
   ts.addTask(t_MqttRun);
+  ts.addTask(t_WebRun);
   t_WiFiConnect.enable();
   t_MqttConnect.enable();
   t_NixieUpdate.enable();
   t_LedsUpdate.enable();
-  t_MqttRun.enable();
 }
 
 void loopTasks() {

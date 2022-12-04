@@ -20,7 +20,8 @@
 
 #include <Arduino.h>
 #include <user_interface.h>
-#include <LittleFS.h>
+#include <FS.h>
+#include <EEPROM.h>
 #include <WiFiClient.h>
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
 #include <ESP8266WebServer.h>
@@ -36,16 +37,26 @@
 #include "tasks.h"
 #include "wifi.h"
 #include "mqtt.h"
+#include "web.h"
 #include "nixiedriver.h"
 #include "leds.h"
 
 #ifdef _DEBUG_
-#define _PP(a) Serial.print(a);
-#define _PL(a) Serial.println(a);
+#define _PF(f_, ...) Serial.printf((f_), ##__VA_ARGS__)
+#define _PP(a) Serial.print(a)
+#define _PL(a) Serial.println(a)
 #else
+#define _PF(f_, ...)
 #define _PP(a)
 #define _PL(a)
 #endif
+
+#define MAGICNIXIE_VERSION "\n\nThis is MagicNixie ver: 2020-10-23 v0.1\n\n" 
+
+void keypressWait();
+boolean isNumeric(String str);
+String formatBytes(size_t bytes);
+
 
 #endif // _MAGICNIXIE_H_
 /* EOF */

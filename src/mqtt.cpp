@@ -17,6 +17,7 @@
 
 #include "magicnixie.h"
 
+#define MODULE "*MQ: "
 
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
@@ -36,21 +37,21 @@ LOCAL FUNCTIONS
 static void receiveMQTTCallback (char* topic, byte* payload, unsigned int length) {
   StaticJsonDocument<256> doc;
 
-  _PP("Message arrived [");
+  _PP(MODULE"Message arrived [");
   _PP(topic);
   _PL("]: ---");
   for (unsigned int i=0;i<length;i++) {
-    _PP((char)payload[i]);
+    _PF("%c", (char)payload[i]);
   }
   _PL("---");
   DeserializationError error = deserializeJson(doc, payload, length);
   if (error) {
-    _PL("JSON parsing failed");
+    _PL(MODULE"JSON parsing failed");
   }
   else {
-    _PL("JSON: ---");
+    _PL(MODULE"JSON: ---");
     serializeJsonPretty(doc, Serial);
-    _PL();
+    _PL("");
     _PL("---");
   }
 }
@@ -58,12 +59,11 @@ static void receiveMQTTCallback (char* topic, byte* payload, unsigned int length
 static IPAddress applyMqttServerIP()
 {
   IPAddress IP;
+  char str[20];
 
   WiFi.hostByName(MQTT_SERVER,IP);
-  _PP("Address of MQTT server ");
-  _PP(MQTT_SERVER);
-  _PL(" is " + IP.toString());
-
+  IP.toString().toCharArray(str,sizeof(str));
+  _PF(MODULE"Address of MQTT server %s is %s\n", MQTT_SERVER, str);
   mqttClient.setServer(IP, MQTT_SERVER_PORT);
 
   return IP;
@@ -76,6 +76,7 @@ PUBLIC FUNCTIONS
 void taskMqttConnect() {
   static IPAddress IP;
   static boolean connected = false;
+  char str[20];
 
   if (t_MqttConnect.isFirstIteration()) {
   }
@@ -90,26 +91,31 @@ void taskMqttConnect() {
   }
     
   if (!mqttClient.connected()) {
-    _PL("MQTT connection lost, reconnecting...")
+    _PL(MODULE"MQTT connection lost, reconnecting...");
     if (IP.toString() == "255.255.255.255")
     {
       IP = applyMqttServerIP();
     }
     // Connect or check if we're connected
     if (mqttClient.connect(MQTT_CLIENT)) {
-      _PL("MQTT connection established to server at " + IP.toString());
+      IP.toString().toCharArray(str,sizeof(str));
+      _PF(MODULE"MQTT connection established to server at %s\n", str);
       // Once connected, publish an announcement...
       mqttClient.publish(MQTT_OUT_TOPIC,"hello world");
       // ... and resubscribe
-      _PP("MQTT subscribing to ");
+      _PP(MODULE"MQTT subscribing to ");
       _PL(MQTT_IN_TOPIC);
       mqttClient.subscribe(MQTT_IN_TOPIC);
       connected = true;
+
+      t_MqttRun.enable();
     } else {
-      _PP("MQTT connection failed, rc=");
+      _PP(MODULE"MQTT connection failed, rc=");
       _PP(mqttClient.state());
       _PL(" try again later");
       connected = false;
+
+      t_MqttRun.disable();
     }
   }
   else if (!connected)

@@ -15,18 +15,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _RTC_H_
-#define _RTC_H_
+#ifndef _WEB_H_
+#define _WEB_H_
 
 #include "magicnixie.h"
 
 
 // Task callback methods prototypes
-extern void taskUpdateTime();
+extern void taskWebConnect();
+extern void taskWebRun();
 
 // Function prototypes
-void setupTime();
-void loopTime();
+void setupWeb();
+void loopWeb();
 
-#endif // _RTC_H_
+#endif // _MQTT_H_
 /* EOF */

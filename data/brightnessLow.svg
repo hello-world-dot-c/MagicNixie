@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
+  <desc>Created with Lunacy</desc>
+  <defs>
+    <path d="M1.5 3C2.32843 3 3 2.32843 3 1.5C3 0.671573 2.32843 0 1.5 0C0.671573 0 0 0.671573 0 1.5C0 2.32843 0.671573 3 1.5 3Z" transform="translate(10.5 0)" id="path_1" />
+    <path d="M1.5 3C2.32843 3 3 2.32843 3 1.5C3 0.671573 2.32843 0 1.5 0C0.671573 0 0 0.671573 0 1.5C0 2.32843 0.671573 3 1.5 3Z" transform="translate(10.5 21)" id="path_2" />
+    <path d="M1.5 3C2.32843 3 3 2.32843 3 1.5C3 0.671573 2.32843 0 1.5 0C0.671573 0 0 0.671573 0 1.5C0 2.32843 0.671573 3 1.5 3Z" transform="translate(21 10.5)" id="path_3" />
+    <path d="M1.5 3C2.32843 3 3 2.32843 3 1.5C3 0.671573 2.32843 0 1.5 0C0.671573 0 0 0.671573 0 1.5C0 2.32843 0.671573 3 1.5 3Z" transform="translate(19 2)" id="path_4" />
+    <path d="M1.5 3C2.32843 3 3 2.32843 3 1.5C3 0.671573 2.32843 0 1.5 0C0.671573 0 0 0.671573 0 1.5C0 2.32843 0.671573 3 1.5 3Z" transform="translate(2 2)" id="path_5" />
+    <path d="M1.5 3C2.32843 3 3 2.32843 3 1.5C3 0.671573 2.32843 0 1.5 0C0.671573 0 0 0.671573 0 1.5C0 2.32843 0.671573 3 1.5 3Z" transform="translate(2 19)" id="path_6" />
+    <path d="M1.5 3C2.32843 3 3 2.32843 3 1.5C3 0.671573 2.32843 0 1.5 0C0.671573 0 0 0.671573 0 1.5C0 2.32843 0.671573 3 1.5 3Z" transform="translate(19 19)" id="path_7" />
+    <path d="M1.5 3C2.32843 3 3 2.32843 3 1.5C3 0.671573 2.32843 0 1.5 0C0.671573 0 0 0.671573 0 1.5C0 2.32843 0.671573 3 1.5 3Z" transform="translate(0 10.5)" id="path_8" />
+    <path d="M7 14C10.866 14 14 10.866 14 7C14 3.13401 10.866 0 7 0C3.13401 0 0 3.13401 0 7C0 10.866 3.13401 14 7 14Z" transform="translate(5 5)" id="path_9" />
+    <clipPath id="clip_1">
+      <use xlink:href="#path_1" />
+    </clipPath>
+    <clipPath id="clip_2">
+      <use xlink:href="#path_2" />
+    </clipPath>
+    <clipPath id="clip_3">
+      <use xlink:href="#path_3" />
+    </clipPath>
+    <clipPath id="clip_4">
+      <use xlink:href="#path_4" />
+    </clipPath>
+    <clipPath id="clip_5">
+      <use xlink:href="#path_5" />
+    </clipPath>
+    <clipPath id="clip_6">
+      <use xlink:href="#path_6" />
+    </clipPath>
+    <clipPath id="clip_7">
+      <use xlink:href="#path_7" />
+    </clipPath>
+    <clipPath id="clip_8">
+      <use xlink:href="#path_8" />
+    </clipPath>
+    <clipPath id="clip_9">
+      <use xlink:href="#path_9" />
+    </clipPath>
+  </defs>
+  <g id="Brightness-low" opacity="0.400344133">
+    <g id="Oval">
+      <use stroke="none" fill="#979797" xlink:href="#path_1" />
+      <g clip-path="url(#clip_1)">
+        <use xlink:href="#path_1" fill="none" stroke="#979797" stroke-width="2" />
+      </g>
+    </g>
+    <g id="Oval">
+      <use stroke="none" fill="#979797" xlink:href="#path_2" />
+      <g clip-path="url(#clip_2)">
+        <use xlink:href="#path_2" fill="none" stroke="#979797" stroke-width="2" />
+      </g>
+    </g>
+    <g id="Oval">
+      <use stroke="none" fill="#979797" xlink:href="#path_3" />
+      <g clip-path="url(#clip_3)">
+        <use xlink:href="#path_3" fill="none" stroke="#979797" stroke-width="2" />
+      </g>
+    </g>
+    <g id="Oval">
+      <use stroke="none" fill="#979797" xlink:href="#path_4" />
+      <g clip-path="url(#clip_4)">
+        <use xlink:href="#path_4" fill="none" stroke="#979797" stroke-width="2" />
+      </g>
+    </g>
+    <g id="Oval">
+      <use stroke="none" fill="#979797" xlink:href="#path_5" />
+      <g clip-path="url(#clip_5)">
+        <use xlink:href="#path_5" fill="none" stroke="#979797" stroke-width="2" />
+      </g>
+    </g>
+    <g id="Oval">
+      <use stroke="none" fill="#979797" xlink:href="#path_6" />
+      <g clip-path="url(#clip_6)">
+        <use xlink:href="#path_6" fill="none" stroke="#979797" stroke-width="2" />
+      </g>
+    </g>
+    <g id="Oval">
+      <use stroke="none" fill="#979797" xlink:href="#path_7" />
+      <g clip-path="url(#clip_7)">
+        <use xlink:href="#path_7" fill="none" stroke="#979797" stroke-width="2" />
+      </g>
+    </g>
+    <g id="Oval">
+      <use stroke="none" fill="#979797" xlink:href="#path_8" />
+      <g clip-path="url(#clip_8)">
+        <use xlink:href="#path_8" fill="none" stroke="#979797" stroke-width="2" />
+      </g>
+    </g>
+    <g id="Oval">
+      <use stroke="none" fill="#979797" xlink:href="#path_9" />
+      <g clip-path="url(#clip_9)">
+        <use xlink:href="#path_9" fill="none" stroke="#979797" stroke-width="4" />
+      </g>
+    </g>
+  </g>
+</svg>

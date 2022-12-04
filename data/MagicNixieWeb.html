@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<!-- Original design made by: Emil Skovgaard Mikkelsen, Interactions Designer, skovgaard.emil@gmail.com -->
+<html lang="en">
+<head>
+  <title>MagicNixie by hello-world-dot-c</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="MagicNixieWeb.css">
+  <script src="MagicNixieWeb.js" > </script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <script src="MagicNixieWeb_load.js" > </script>
+</head>
+<body>
+<style>
+
+</style>
+<div class="container" style="position: relative; height:900px; width:355px; top:10%; background-color:white;">
+	<center><h2>MagicNixie Panel</h2></center>
+	<div class="container" style="background: #ffffff url('main_background.svg') no-repeat; position: absolute; height: 810px; width: 340px;  top:7%;  z-index:9999; ">
+	  
+	  <!-- ON/OFF button -->
+	  <div class="row" style="width: 100%; position: absolute; top: 30px; ">
+		<div class="col-xs-8" style="background-color: light-grey; ">
+			<p>This device is <span id="lampStatus"></span></p>
+		</div>	  
+		<div class="col-xs-4" style="background-color: light-grey; ">
+			<label class="switch">
+			  <input id="onOffButton" type="checkbox">
+			  <div class="onOff_slider round"></div>
+			</label>
+		</div>
+	  </div>	  
+	  
+	  <!-- Brightness slider --> 
+	  <div class="row" style="width: 100%; position: absolute; top: 80px; ">
+		<div class="col-xs-2" style="background-color: light-grey; ">
+			<img src="brightnessLow.svg">
+		</div>	  
+		<div class="col-xs-8" style="background-color:white; ">
+			<div class="slidecontainer" style="">
+				<input type="range" min="1" max="100" value="50" class="slider" id="brightnessSlider" onchange="mySliderFunction('bright', this.value)">
+				<span id="brightnessValue"></span>
+			</div>
+		</div>
+		<div class="col-xs-2" style="background-color: light-grey; ">
+		<img src="brightnessHigh.svg">
+		</div>
+	  </div>
+
+	  <!-- Delay slider --> 
+	  <div class="row" style="width: 100%; position: absolute; top: 120px; ">
+		<div class="col-xs-2" style="background-color: light-grey; ">
+		<img src="delayLeft.svg">
+		</div>	  
+		<div class="col-xs-8" style="background-color:white; ">
+			<div class="slidecontainer" style="">
+				<input type="range" min="1" max="255" value="50" class="slider" id="delaySlider" onchange="mySliderFunction('delay', this.value)">
+				<span id="delayValue"></span>
+			</div>
+		</div>
+		<div class="col-xs-2" style="background-color: light-grey; ">
+		<img src="delayRight.svg">
+		</div>
+	  </div>
+
+	  <div class="row" style="width: 100%; position: absolute; top: 160px;" >
+		<div class="col-xs-12" >
+		<B>Sceenes </B> <span id="activeSceene"></span>
+		</div>
+	  </div>	  
+	  
+	  <!-- Rainbow & Candle buttons -->
+	  <div class="row" style="width: 100%; position: absolute; top: 185px;" >
+		<div class="col-xs-6" >
+		  <div class="buttoncontainer" >
+			<button class="buttonClick" onclick="buttonSubmit('rainbow')">RAINBOW</button>
+		  </div>
+		</div>
+		<div class="col-xs-6" >
+		  <div class="buttoncontainer" >
+			<button class="buttonClick" onclick="buttonSubmit('candle')">CANDLE</button>
+		  </div>
+		</div>		
+	  </div>
+	  
+	  <!-- Rainbowcycle button -->
+	  <div class="row" style="width: 100%; position: absolute; top: 260px;" >
+		<div class="col-xs-6" >
+		  <div class="buttoncontainer" >
+			<button class="buttonClick" onclick="buttonSubmit('rainbowcycle')">RAINBOWCYCLE</button>
+		  </div>
+		</div>
+		<div class="col-xs-6" >
+		  <div class="buttoncontainer" >
+
+		  </div>
+		</div>		
+	  </div>	  
+
+	  <div class="row" style="width: 100%; position: absolute; top: 330px;" >
+		<div class="col-xs-12" >
+		<B>Colour </B> <span id="activeButton"></span>
+		</div>
+	  </div>	  
+
+	  <!-- Statis & Fade buttons -->
+	  <div class="row" style="width: 100%; position: absolute; top: 355px;" >
+		<div class="col-xs-6" >
+		  <div class="buttoncontainer" >
+			<button class="buttonClick" onclick="buttonSubmit('static')">STATIC</button>
+		  </div>
+		</div>
+		<div class="col-xs-6" >
+		  <div class="buttoncontainer" >
+			<button class="buttonClick" onclick="buttonSubmit('fade')">FADE</button>
+		  </div>
+		</div>		
+	  </div>	  
+	  
+	  <!-- Red slider -->
+	  <div class="row" style="width: 100%; position: absolute; top: 450px;" >
+		<div class="col-xs-12" >
+		  <div class="slidecontainer" >
+			<input type="range" min="0" max="255" value="123" class="slider" id="redSlider" style="background-color:red;" onchange="mySliderFunction('colour', 0)">
+			<span id="redValue"></span>
+		  </div>
+		</div>
+	  </div>
+
+	  <!-- Green slider -->
+	  <div class="row" style="width: 100%; position: absolute; top: 490px;" >
+		<div class="col-xs-12" >
+		  <div class="slidecontainer" >
+			<input type="range" min="0" max="255" value="123" class="slider" id="greenSlider" style="background-color:green;" onchange="mySliderFunction('colour', 0)">
+			<span id="greenValue"></span>
+		  </div>
+		</div>
+	  </div>
+
+	  <!-- Blue slider -->
+	  <div class="row" style="width: 100%; position: absolute; top: 530px;" >
+		<div class="col-xs-12" >
+		  <div class="slidecontainer" >
+			<input type="range" min="0" max="255" value="123" class="slider" id="blueSlider" style="background-color:blue;" onchange="mySliderFunction('colour', 0)">
+			<span id="blueValue"></span>
+		  </div>
+		</div>
+	  </div>
+	  
+	  <div class="row" style="width: 100%; position: absolute; top: 570px;">
+		<div class="col-xs-12" style="">
+			<div id="square" style="height: 30px; background-color: #555; border-radius: 12px;"></div>
+		</div>
+	  </div>
+
+	  <!-- Save configuration button -->
+	  <div class="row" style="width: 100%; position: absolute; top: 610px;" >
+		<div class="col-xs-12" >
+		  <div class="buttoncontainer" >
+			<center><button class="buttonClick" onclick="buttonSubmit('save')">Save configuration</button></center>
+		  </div>
+		</div>
+	  </div>	  	  
+	</div>
+</div>	
+<script>
+	
+	var slider = document.getElementById("brightnessSlider");
+	var output = document.getElementById("brightnessValue");
+	output.innerHTML = slider.value;
+
+	slider.oninput = function() 
+	{
+	  output.innerHTML = this.value;
+	}
+
+	var delay_slider = document.getElementById("delaySlider");
+	var delay_output = document.getElementById("delayValue");
+	delay_output.innerHTML = delay_slider.value;
+
+	delay_slider.oninput = function() 
+	{
+	  delay_output.innerHTML = this.value;
+	}
+
+	var red_slider = document.getElementById("redSlider");
+	var red_output = document.getElementById("redValue");
+	red_output.innerHTML = red_slider.value;
+
+	red_slider.oninput = function() 
+	{
+	  red_output.innerHTML = this.value;
+	}
+
+	var green_slider = document.getElementById("greenSlider");
+	var green_output = document.getElementById("greenValue");
+	green_output.innerHTML = green_slider.value;
+
+	green_slider.oninput = function() 
+	{
+	  green_output.innerHTML = this.value;
+	}
+
+	var blue_slider = document.getElementById("blueSlider");
+	var blue_output = document.getElementById("blueValue");
+	blue_output.innerHTML = blue_slider.value;
+
+	blue_slider.oninput = function() 
+	{
+	  blue_output.innerHTML = this.value;
+	}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg width="27px" height="24px" viewBox="0 0 27 24" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
+  <desc>Created with Lunacy</desc>
+  <g id="Clock" transform="translate(0.5 0.5)">
+    <path d="M10 20C15.5228 20 20 15.5228 20 10C20 4.47715 15.5228 0 10 0C4.47715 0 0 4.47715 0 10C0 15.5228 4.47715 20 10 20Z" transform="translate(0 2.75)" id="Oval" fill="#D8D8D8" stroke="none" />
+    <path d="M0.5 0C0.223858 0 0 0.402944 0 0.9L0 8.1C0 8.59706 0.223858 9 0.5 9L1.5 9C1.77614 9 2 8.59706 2 8.1L2 0.9C2 0.402944 1.77614 0 1.5 0L0.5 0Z" transform="translate(8 6.75)" id="Path" fill="#FFFFFF" stroke="none" />
+    <path d="M0.5 0C0.223858 0 0 0.268629 0 0.6L0 5.4C0 5.73137 0.223858 6 0.5 6L1.5 6C1.77614 6 2 5.73137 2 5.4L2 0.6C2 0.268629 1.77614 0 1.5 0L0.5 0Z" transform="matrix(-4.371139E-08 1 -1 -4.371139E-08 14.5 13.75)" id="Path" fill="#FFFFFF" stroke="none" />
+    <g id="!" transform="translate(13.60001 0)">
+      <path d="M6 12C9.31371 12 12 9.31371 12 6C12 2.68629 9.31371 0 6 0C2.68629 0 0 2.68629 0 6C0 9.31371 2.68629 12 6 12Z" id="Oval" fill="#FFFFFF" stroke="#D8D8D8" stroke-width="1" />
+      <path d="M0.5 0C0.223858 0 0 0.223858 0 0.5L0 4.5C0 4.77614 0.223858 5 0.5 5L1.5 5C1.77614 5 2 4.77614 2 4.5L2 4.5L2 0.5C2 0.223858 1.77614 0 1.5 0L1.5 0L0.5 0Z" transform="translate(5 1.75)" id="Path" fill="#D8D8D8" stroke="none" />
+      <path d="M0.5 2.84217e-14C0.223858 2.84217e-14 0 0.0895431 0 0.2L0 1.8C0 1.91046 0.223858 2 0.5 2L1.5 2C1.77614 2 2 1.91046 2 1.8L2 0.2C2 0.0895431 1.77614 0 1.5 0L0.5 2.84217e-14Z" transform="translate(5 7.75)" id="Path" fill="#D8D8D8" stroke="none" />
+    </g>
+  </g>
+</svg>

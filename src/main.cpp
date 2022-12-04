@@ -17,31 +17,100 @@
 
 #include "magicnixie.h"
 
+#define MODULE "*M: "
+
+/*---------------------------------------------------------------*/
+/* Utility function                                              */
+/* Halt the program and wait for "key press" at the serial port. */
+/* For DEBUG purpose only                                        */
+/*---------------------------------------------------------------*/
+void keypressWait()
+{
+  Serial.println("** Hit a key to continue");
+  while(Serial.available() == 0){}
+  while(Serial.available()){Serial.read();}
+}
+
+/*---------------------------------------------------------------*/
+/* Checks if a string is numeric.                                */
+/* Removed check for decimal point as it was not needed          */
+/* Original code found here:                                     */
+/*     http://tripsintech.com/arduino-isnumeric-function/        */
+/*---------------------------------------------------------------*/
+boolean isNumeric(String str) 
+{
+  unsigned int stringLength = str.length();
+ 
+  if (stringLength == 0) return false;
+ 
+  for(unsigned int i = 0; i < stringLength; ++i) 
+  {
+     if (isDigit(str.charAt(i))) 
+     {
+       continue;
+     }
+     return false;
+  }
+  return true;
+}
+
+/*--------------------------------------------------------------------*/
+/*  Utility function                                                  */
+/*  Original code found here:                                         */
+/*  https://tttapa.github.io/ESP8266/Chap16%20-%20Data%20Logging.html */
+/*------------------------------------------------------------------- */
+String formatBytes(size_t bytes)  // convert sizes in bytes to KB and MB
+{
+  if (bytes < 1024) 
+  {
+    return String(bytes) + "B";
+  } 
+  else if (bytes < (1024 * 1024)) 
+  {
+    return String(bytes / 1024.0) + "KB";
+  } 
+  else if (bytes < (1024 * 1024 * 1024)) 
+  {
+    return String(bytes / 1024.0 / 1024.0) + "MB";
+  }
+  return "";
+}
 
 void setup() {
   // Running at 160 MHz for snappier performance.
   //system_update_cpu_freq(160);
   // Init UART for debugging output.
   Serial.begin(115200);
-  Serial.printf("CPU frequency: %d\n", system_get_cpu_freq());
+  _PL(MAGICNIXIE_VERSION);
+  _PF(MODULE"CPU frequency: %d MHz\n", system_get_cpu_freq());
 
-  if (LittleFS.begin()) {  
-    LittleFS.format();
-    
-    Dir dir = LittleFS.openDir("/");
-    while (dir.next()) {
-      Serial.print(dir.fileName());
-      File f = dir.openFile("r");
-      Serial.println(f.size());
+  if (SPIFFS.begin()) {  
+//    SPIFFS.format();    
+    // Start the SPIFFS and list all contents
+    _PP(MODULE"** Starting SPIFFS.");
+    SPIFFS.begin();
+
+    _PL(" [OK]");
+    _PL(MODULE"** Contents:");
+    {
+      Dir dir = SPIFFS.openDir("/");
+      while (dir.next())                       // List the file system contents
+      {
+        String fileName = dir.fileName();
+        size_t fileSize = dir.fileSize();
+        _PF("\t%s, size: %s\r\n", fileName.c_str(), formatBytes(fileSize).c_str());
+      }
+      _PL("");
     }
   }
   else
   {
-    _PL("Error mounting file system");
+    _PL(MODULE"Error mounting file system");
   }
   
   setupWifi();
   setupMqtt();
+  setupWeb();
   setupNixie();
   setupTasks();
 

@@ -17,6 +17,8 @@
 
 #include "magicnixie.h"
 
+#define MODULE "*LED: "
+
 #define NUMPIXELS      8
 #define LEDsSpeed      10
 const int LEDsDelay=40;

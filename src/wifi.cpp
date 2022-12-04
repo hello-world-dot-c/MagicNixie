@@ -17,6 +17,8 @@
 
 #include "magicnixie.h"
 
+#define MODULE "*WF: "
+
 
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
@@ -34,7 +36,8 @@ LOCAL VARIABLES/CLASSES
 LOCAL FUNCTIONS
 ***************************************************************************/
 static void configModeCallback (WiFiManager *myWiFiManager) {
-  _PL("Entered config mode");
+  _PL(MODULE"Entered config mode");
+  _PP(MODULE);
   _PL(WiFi.softAPIP());
   //if you used auto generated SSID, print it
   _PL(myWiFiManager->getConfigPortalSSID());
@@ -51,13 +54,15 @@ void taskWiFiConnect() {
   }
     
  if ((WiFi.status() != WL_CONNECTED) || (WiFi.localIP().toString() == "0.0.0.0")) {
-    _PL("WiFi connection lost, reconnecting...")
+    _PL(MODULE"WiFi connection lost, reconnecting...");
     connected = false;
   }
   else if (!connected)
   {
-    _PL("WiFi connection established, using " + WiFi.localIP().toString());
+    _PL(MODULE"WiFi connection established, using " + WiFi.localIP().toString());
     connected = true;
+    t_MqttConnect.enable();
+    t_WebConnect.enable();
   }
 }
 
@@ -79,14 +84,14 @@ void setupWifi() {
   //here  "AutoConnectAP"
   //and goes into a blocking loop awaiting configuration
   if (!wifiManager.autoConnect(WIFIAPNAME)) {
-    _PL("failed to connect and hit timeout");
+    _PL(MODULE"failed to connect and hit timeout");
     //reset and try again, or maybe put it to deep sleep
 //    ESP.reset();
 //    delay(1000);
   } 
 
   //if you get here you have connected to the WiFi
-  _PL("Connected to SSID " + WiFi.SSID() + ", own IP is " + WiFi.localIP().toString());
+  _PL(MODULE"Connected to SSID " + WiFi.SSID() + ", own IP is " + WiFi.localIP().toString());
 }
 
 void loopWifi() {

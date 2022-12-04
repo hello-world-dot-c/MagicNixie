@@ -37,6 +37,8 @@
 extern Task t_WiFiConnect;
 extern Task t_MqttConnect;
 extern Task t_MqttRun;
+extern Task t_WebConnect;
+extern Task t_WebRun;
 extern Task t_NixieUpdate;
 extern Task t_LedsUpdate;
 

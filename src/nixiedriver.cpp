@@ -17,6 +17,8 @@
 
 #include "magicnixie.h"
 
+#define MODULE "*ND: "
+
 /*
   The bits in the 64-bit shift register are allocated to the display function
   as follows:
@@ -80,18 +82,20 @@ void taskNixieUpdate() {
 void nixiePrint(int Pos, String Str) {
   int i, len;
   char ch;
+  char str[10];
 
   if (Pos>8) {
     return;
   }
 
-  len = Str.length();
+  Str.toCharArray(str, sizeof(str));
+  len = strlen(str);
   if (Pos+len > 8) {
     len = 8-Pos;
   }
   for (i=Pos; i<Pos+len; i++) {
     displayMem.lword &= maskBits[i];
-    ch = Str[i-Pos];
+    ch = str[i-Pos];
     if ((i != 2) && (i != 5)) {
       // position has a digit
       if ((ch >= '0') && (ch <= '9')) {
@@ -112,8 +116,8 @@ void nixiePrint(int Pos, String Str) {
       displayMem.lword |= (bitmask << (startBits[i]));
     }
   }
-  _PL("Printed: "+Str);
-  printf("Display mem: 0x%016llX\n", displayMem.lword);
+  _PF(MODULE"Printed: %s\n", str);
+  _PF(MODULE"Display mem: 0x%016llX\n", displayMem.lword);
 }
 
 void setupNixie() {
@@ -125,7 +129,7 @@ void setupNixie() {
   SPI.begin();
   SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
 
-  _PL("SPI for nixie shift register initialized");
+  _PL(MODULE"SPI for nixie shift register initialized");
 }
 
 void loopNixie() {
