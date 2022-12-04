@@ -174,7 +174,7 @@ void taskSystemTimeUpdate() {
       ntp_update_triggered = true;
       ntp_update_ticks = NTP_UPDATE_TICKS;
     } else if (ntp_update_triggered) {
-      _PL(MODULE"NTP update timeout!");
+      _PL(MODULE"NTP update FAILED: Timeout");
       ntp_update_triggered = false;
       ntp_update_ticks = 1;  // try immediately next call until we are successful
     }
@@ -193,14 +193,13 @@ void taskSystemTimeUpdate() {
   // Periodically update system time from RTC
   rtc_update_ticks--;
   if (rtc_update_ticks==0) {
-    _PL(MODULE"RTC update scheduled");
     if (getRTCTime(&rtc_time)) {
       myTZ.setTime(rtc_time.hours, rtc_time.minutes, rtc_time.seconds,
         rtc_time.day, rtc_time.month, rtc_time.year);
-      _PL(MODULE"RTC update time: "+myTZ.dateTime()); 
+      _PL(MODULE"RTC got updated time: "+myTZ.dateTime()); 
       rtc_update_ticks = RTC_UPDATE_TICKS;  // update again later
     } else {
-      _PL(MODULE"RTC get update failed!");
+      _PL(MODULE"RTC get updated time FAILED!");
       rtc_update_ticks = 1;  // try immediately next call until we are successful
     }
   }
