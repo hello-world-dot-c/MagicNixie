@@ -55,6 +55,19 @@ static bool setUpdateRtc = false;
 static gShowContent_t showContent;
 static bool updateTimeAsap = true;
 
+static const char * dePoisonStrings[] = {
+  "0  6  6 ",
+  "3  7  7 ",
+  "4  8  8 ",
+  "5  9  9 ",
+  "6  6  6 ",
+  "7  7  7 ",
+  "8  8  8 ",
+  "9  9  9 ",
+};
+#define DEPOISONSTRINGS_NUM (sizeof (dePoisonStrings) / sizeof (const char *))
+
+
 /**************************************************************************
 LOCAL FUNCTIONS
 ***************************************************************************/
@@ -250,6 +263,7 @@ void taskTimeUpdate() {
   static uint8_t stage;
   static bool flashing = false;
   static uint32_t flashCtr;
+  static uint8_t dePoisonNum = 0;
   if (t_TimeUpdate.isFirstIteration()) {
     showContent = SHOW_TIME;
     stageCtr = 0;
@@ -303,6 +317,9 @@ void taskTimeUpdate() {
         } else if (gVars.tempValid[2]) {
           showContent = SHOW_TEMP2;
           stage = 1;
+        } else if (gConf.dePoison) {
+          showContent = SHOW_DEPOISON;
+          stage = 1;
         } else {
           stage = 4;
         }
@@ -313,6 +330,9 @@ void taskTimeUpdate() {
         } else if (gVars.tempValid[2]) {
           showContent = SHOW_TEMP2;
           stage = 1;
+        } else if (gConf.dePoison) {
+          showContent = SHOW_DEPOISON;
+          stage = 1;
         } else {
           stage = 4;
         }
@@ -320,11 +340,17 @@ void taskTimeUpdate() {
         if (gVars.tempValid[2]) {
           showContent = SHOW_TEMP2;
           stage = 1;
+        } else if (gConf.dePoison) {
+          showContent = SHOW_DEPOISON;
+          stage = 1;
         } else {
           stage = 4;
         }
       } else if (showContent == SHOW_TEMP2) {
         stage = 4;
+        } else if (gConf.dePoison) {
+          showContent = SHOW_DEPOISON;
+          stage = 1;
       } else {
         stage = 4;
       }
@@ -376,6 +402,12 @@ void taskTimeUpdate() {
           flashing = (gVars.temp[2] < 0);
           sprintf(str, "%2d.%1d '%2d", deg, tenths, 2);
           _PF(MODULE"Showing temperature 2: %2.1f, \"%s\"\n", gVars.temp[2], str);
+          }
+          break;
+        case SHOW_DEPOISON: {
+          sprintf(str, "%s", dePoisonStrings[dePoisonNum]);
+          dePoisonNum = (dePoisonNum+1) % DEPOISONSTRINGS_NUM;
+          _PF(MODULE"Showing de-poisoning: \"%s\"\n", str);
           }
           break;
         default:

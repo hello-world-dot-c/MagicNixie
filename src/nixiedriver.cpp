@@ -234,6 +234,7 @@ void nixieTurnOnOffPwm (boolean on) {
   }
 }
 
+#define DO_ONLY_SELF_TEST 0
 
 void taskNixieSlowUpdate() {
   static uint32_t next_full_second;
@@ -253,6 +254,17 @@ void taskNixieSlowUpdate() {
   tickCnt++;
 
   if (selfTest) {
+#ifdef DO_ONLY_SELF_TEST
+    if (tickCnt == ND_SECONDS_BY_TICKS(next_full_second)) {
+      t_TimeUpdate.disable();
+      byte digit = (next_full_second / 5) % 10;
+      char sep = (digit % 2) ? ' ' : ':';
+      char str[10];
+      sprintf(str, "%d%d%c%d%d%c%d%d", digit, digit, sep, digit, digit, sep, digit, digit);
+      nixiePrint(0, str, 0);
+      next_full_second++;
+    }
+#else
     if (tickCnt == ND_SECONDS_BY_TICKS(next_full_second)) {
       if (next_full_second == 12) {  // self test finished
         t_TimeFastUpdate.enable();  // start time display
@@ -275,6 +287,7 @@ void taskNixieSlowUpdate() {
         next_full_second++;
       }
     }
+#endif
   } else {
     if (tickCnt == ND_SECONDS_BY_TICKS(next_full_second)) {
       next_full_second += ANTI_POISONING_SWITCH_PERIOD_S;

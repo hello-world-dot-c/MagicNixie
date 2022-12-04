@@ -81,7 +81,8 @@ typedef enum {
   SHOW_DATE,
   SHOW_TEMP0,
   SHOW_TEMP1,
-  SHOW_TEMP2
+  SHOW_TEMP2,
+  SHOW_DEPOISON
 } gShowContent_t;
 
 typedef struct {
@@ -91,6 +92,7 @@ typedef struct {
   bool     useSoftBlend;
   bool     syncRTC;
   bool     quietNights;
+  bool     dePoison;
   uint8_t  nixieBrightness;
   uint16_t altDisplayPeriod_s;
   uint16_t altDisplayDuration_ms;  

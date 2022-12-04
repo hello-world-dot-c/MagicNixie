@@ -267,6 +267,7 @@ void setup() {
     gConf.ledBlue = 60; 
     gConf.ledBrightness = 50;
     gConf.tempTimeout_s = 100;
+    gConf.dePoison = true;
     saveConfig();
   }
   
