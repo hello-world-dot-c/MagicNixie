@@ -53,8 +53,8 @@ GLOBAL VARIABLES/CLASSES
 LOCAL VARIABLES/CLASSES
 ***************************************************************************/
 /*
-The relationship of digits to the bits in the shift data is a hot mess
-with no rhyme nor reason. Therefore, just using a table seems
+The relationship of digits to the bits in the shift data is a hot mess, There
+is a symmetry but instead of trying to calculate it, just using a table seems
 appropriate.
  */
 static const uint8_t digitBitNum[7][10] = {
@@ -69,7 +69,6 @@ static const uint8_t digitBitNum[7][10] = {
 
 static uint64_t digitMask[8];  // masks to turn off bits for digit - filled on startup
 
-static char displayStr[] = "00:00:00"; // Content of this string will be displayed on tubes
 static struct {
   uint64_t lword;
   uint64_t mask;
@@ -107,6 +106,10 @@ void taskNixieUpdate() {
       if (displayMem[i].blend_active) {
         num_phase = displayMem[i].blend_ctr / displayMem[i].blend_slices;
         slice_in_phase = displayMem[i].blend_ctr % displayMem[i].blend_slices;
+        // Slicing-in of the new display content. From each phase during the blending cycle to the next,
+        // it happens at an earlier and earlier slice. This leads to a PWM signal for the affected outputs
+        // with a decreasing duty cycle for the old output and an increasing duty cycle for the new, which
+        // controls the brightness for the linked digits. Thereby, we can have "soft" transitions.
         if (slice_in_phase >= (displayMem[i].blend_slices-displayMem[i].blend_slices_shift*num_phase)) {
           dmem_out &= ~displayMem[i].mask;
           dmem_out |= (displayMem[i].lword & displayMem[i].mask);

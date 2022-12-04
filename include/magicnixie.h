@@ -64,9 +64,17 @@ DEFINITIONS AND SETTINGS
 #define NIXIE_UPD_PERIOD 1  // Nixies updated every 5 ms (200/s)
 #define LED_UPD_PERIOD 100  // LEDs updated every 100 ms
 
+// EEPROM locations
+#define NVOL_SIZE 4096
+#define NVOL_START_SETTINGS 0
+#define NVOL_START_TZ  (NVOL_START_SETTINGS+20)  // length is EEPROM_CACHE_LEN
+
+
 typedef struct {
   bool use12hDisplay;
-  bool useSoftBlend;  
+  bool omitLeading0Hour;  
+  bool useSoftBlend;
+  bool syncRTC;
  } gConf_t;
 
 extern gConf_t gConf;

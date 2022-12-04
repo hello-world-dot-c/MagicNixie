@@ -22,20 +22,21 @@
 #define DEBUG    1 // 0: No debug info. 1: Show debug info.
 
 /*----|| #DEFINES ||--------------------------------------------*/ 
-#define L_STATUS      1 // Single byte variable
-#define C_RED         2 // Single byte variable
-#define C_GREEN       3 // Single byte variable
-#define C_BLUE        4 // Single byte variable
-#define BRIGHTNESS    5 // Single byte variable
-#define DELAY         6 // Single byte variable 
-#define RAINBOWCYCLE  7 // Single byte variable 
-#define RAINBOW       8 // Single byte variable
-#define STATIC        9 // Single byte variable 
-#define FADE          9 // Single byte variable
-#define CANDLE       10 // Single byte variable
-#define SCEENE1      11 // Dummy for additional sceenes
-#define SCEENE2      12 // Dummy for additional sceenes
-#define SCEENE3      13 // Dummy for additional sceenes
+#define W_BEGIN      ( 0+NVOL_START_SETTINGS) // Single byte variable
+#define L_STATUS     ( 1+NVOL_START_SETTINGS) // Single byte variable
+#define C_RED        ( 2+NVOL_START_SETTINGS) // Single byte variable
+#define C_GREEN      ( 3+NVOL_START_SETTINGS) // Single byte variable
+#define C_BLUE       ( 4+NVOL_START_SETTINGS) // Single byte variable
+#define BRIGHTNESS   ( 5+NVOL_START_SETTINGS) // Single byte variable
+#define DELAY        ( 6+NVOL_START_SETTINGS) // Single byte variable 
+#define RAINBOWCYCLE ( 7+NVOL_START_SETTINGS) // Single byte variable 
+#define RAINBOW      ( 8+NVOL_START_SETTINGS) // Single byte variable
+#define STATIC       ( 9+NVOL_START_SETTINGS) // Single byte variable 
+#define FADE         ( 9+NVOL_START_SETTINGS) // Single byte variable
+#define CANDLE       (10+NVOL_START_SETTINGS) // Single byte variable
+#define SCENE1       (11+NVOL_START_SETTINGS) // Dummy for additional scenes
+#define SCENE2       (12+NVOL_START_SETTINGS) // Dummy for additional scenes
+#define SCENE3       (13+NVOL_START_SETTINGS) // Dummy for additional scenes
 /*----|| #DEFINES-end ||----------------------------------------*/
 
 
@@ -62,7 +63,7 @@ byte lampRainbow      = 1;  // 0 or 1.
 byte lampStatic       = 0;  // 0 or 1.
 byte lampFade         = 0;  // 0 or 1.
 byte lampCandle       = 0;  // 0 or 1.
-// Add additinal sceene variables here.
+// Add additinal scene variables here.
 /* Configuration variables END ------- */
 
 byte handleApi = 0; // 1: Received a HTTP POST request via API interface. 
@@ -84,6 +85,22 @@ byte fadeInterpolation[97] =
 /**************************************************************************
 LOCAL FUNCTIONS
 ***************************************************************************/
+String hexFromRGB (uint8_t r, uint8_t g, uint8_t b)
+{
+  String ret = "";
+  if (r<16)
+    ret += "0";
+  ret += String(r, HEX);
+  if (g<16)
+    ret += "0";
+  ret += String(g, HEX);
+  if (b<16)
+    ret += "0";
+  ret += String(b, HEX);
+
+  return ret;  
+}
+
 /*--------------------------------------------------------------------*/
 /* Original code found here:                                          */
 /*  https://tttapa.github.io/ESP8266/Chap16%20-%20Data%20Logging.html */
@@ -137,8 +154,8 @@ void handleRoot()
     {
       // Received LAMP=1
       lampStatus = 1;
-      EEPROM.write(L_STATUS, 1); // Save new lamp status
-      EEPROM.commit();           // Needed in order to save content to flash.
+//      EEPROM.write(L_STATUS, 1); // Save new lamp status
+//      EEPROM.commit();           // Needed in order to save content to flash.
       if( DEBUG ) Serial.println(MODULE"**  LAMP ON.");
       if( handleApi )
       {  // Request received via API
@@ -151,8 +168,8 @@ void handleRoot()
     {
       // Received LAMP=0
       lampStatus = 0;
-      EEPROM.write(L_STATUS, 0); // Save new lamp status
-      EEPROM.commit();           // Needed in order to save content to flash.
+//      EEPROM.write(L_STATUS, 0); // Save new lamp status
+//      EEPROM.commit();           // Needed in order to save content to flash.
       if( DEBUG ) Serial.println(MODULE"**  LAMP OFF.");
       if( handleApi )
       {  // Request received via API
@@ -278,21 +295,21 @@ void handleRoot()
     }
 */
   }
-  else if (server.hasArg("SCEENE") )
+  else if (server.hasArg("SCENE") )
   {
-    if( DEBUG ) Serial.println(MODULE"** Received SCEENE."); 
-    str = server.arg("SCEENE");
+    if( DEBUG ) Serial.println(MODULE"** Received SCENE."); 
+    str = server.arg("SCENE");
     boolean accepted = 1;
 	  if( str == "RAINBOWCYCLE" )
 	  {
-      // Received SCEENE=RAINBOWCYCLE
+      // Received SCENE=RAINBOWCYCLE
       if( DEBUG ) Serial.println(MODULE"**  Rainbowcycle");
       lampRainbowCycle = 1;
       lampRainbow = lampStatic  = lampFade = lampCandle = 0; 
 	  }
 	  else if( str == "RAINBOW" )
 	  {
-      // Received SCEENE=RAINBOW
+      // Received SCENE=RAINBOW
       if( DEBUG ) Serial.println(MODULE"**  Rainbow");
       lampRainbowCycle = 0;
       lampRainbow = 1;
@@ -300,7 +317,7 @@ void handleRoot()
 	  }
 	  else if( str == "CANDLE" )
 	  {
-      // Received SCEENE=CANDLE
+      // Received SCENE=CANDLE
       if( DEBUG ) Serial.println(MODULE"**  Candle");
       lampRainbowCycle = lampRainbow = lampStatic  = lampFade = 0;
 	    lampCandle = 1; 
@@ -319,12 +336,12 @@ void handleRoot()
     else
     {   
       if( accepted )
-        strText = "SCEENE received correct";
+        strText = "SCENE received correct";
       else
-        strText = "Incorrect SCEENE received";
+        strText = "Incorrect SCENE received";
       handleFileRead( HTMLMainFile ); // Update WEB interface
     }
-    if( DEBUG ) Serial.println(MODULE"**  SCEENE submit handled."); 
+    if( DEBUG ) Serial.println(MODULE"**  SCENE submit handled."); 
   }
   else if(server.hasArg("BRIGHTNESS") )
   {
@@ -444,6 +461,7 @@ void handleRoot()
   else if(server.hasArg("SAVE") )
   {
     // Save present configuration in EEPROM.
+    EEPROM.begin(NVOL_SIZE); // Needed in order to start read or write to flash.
     EEPROM.write(L_STATUS,     lampStatus);
     EEPROM.write(C_RED,        lampRed);
     EEPROM.write(C_GREEN,      lampGreen);
@@ -521,18 +539,18 @@ void MagicNixieWeb_loadScript ()
 	  lampON = "ON";
 	  lampChecked = "true";
   }
-  String sceene = "";
+  String scene = "";
   String colour = "";
-  if( lampRainbowCycle ) sceene = "Rainbowcycle is active.";
-  else if( lampRainbow ) sceene = "Rainbow is active.";
-  else if( lampCandle ) sceene = "Candle is active.";
+  if( lampRainbowCycle ) scene = "Rainbowcycle is active.";
+  else if( lampRainbow ) scene = "Rainbow is active.";
+  else if( lampCandle ) scene = "Candle is active.";
   else if( lampStatic ) colour = "Static is active.";
   else if( lampFade ) colour = "Fade is active.";
-  else sceene = "Unkown is active.";
+  else scene = "Unkown is active.";
   String temp  = "document.addEventListener('DOMContentLoaded', function ()\n";
          temp += "{\n";
-         temp += "  document.getElementById(\"activeSceene\").innerHTML = \"";
-         temp += sceene;
+         temp += "  document.getElementById(\"activeScene\").innerHTML = \"";
+         temp += scene;
          temp += "\";\n";
          temp += "  document.getElementById(\"activeButton\").innerHTML = \"";
          temp += colour;
@@ -572,6 +590,9 @@ void MagicNixieWeb_loadScript ()
          temp += "\";\n";
          temp += "  document.getElementById(\"blueValue\").innerHTML = \"";
          temp += lampBlue;
+         temp += "\";\n";
+         temp += "  document.getElementById(\"square\").style.backgroundColor = \"#";
+         temp += hexFromRGB(lampRed, lampGreen, lampBlue);
          temp += "\";\n";
          temp += "}, false);\n";
 		 
@@ -616,14 +637,14 @@ void taskWebRun() {
 
 void setupWeb() {
   // Init or read EEPROM settings. --------------------------
-  Serial.println(MODULE"** EEPROM Setup started");  
-  EEPROM.begin(512); // Needed in order to start read or write to flash.
+  Serial.println(MODULE"** EEPROM Setup started");
+  EEPROM.begin(NVOL_SIZE); // Needed in order to start read or write to flash.
   
   // See if any old settings are saved (Addr 0 contains 72).
-  if( EEPROM.read( 0 ) != 72 )
+  if( EEPROM.read(W_BEGIN) != 72 )
   {  // Save default configuration.
-
-     EEPROM.write(0,            72); // From now on new values will be saved.
+     Serial.println("**  No default configuration found, saving default");
+     EEPROM.write(W_BEGIN,      72); // From now on new values will be saved.
      EEPROM.write(L_STATUS,     lampStatus);
      EEPROM.write(C_RED,        lampRed);
      EEPROM.write(C_GREEN,      lampGreen);

@@ -148,8 +148,9 @@ void taskSystemTimeUpdate() {
       _PL(MODULE"Could not find RTC");
     Wire.setClock(50000); // I2C works better at reduced speed
 #endif // USE_RTC
-//    setDebug(DEBUG, Serial);
+//    setDebug(INFO, Serial);
     setDebug(NONE);
+    myTZ.setCache(NVOL_START_TZ);
     myTZ.setLocation(TIME_ZONE_STR); // set "our" time zone
     setInterval(0); // disable automatic updates
 #if USE_NTP
@@ -250,7 +251,7 @@ void taskTimeFastUpdate() {
   char separation_char;
   char timeStr[10];
   uint8_t this_second;
-  uint8_t ones;
+  uint8_t singles;
   uint8_t tens;
   uint8_t hour;
 
@@ -260,18 +261,23 @@ void taskTimeFastUpdate() {
     } else {
       hour = myTZ.hour();
     }
+    if (gConf.omitLeading0Hour) {
+      sprintf(timeStr, "%2d", hour);
+    } else {
+      sprintf(timeStr, "%02d", hour);
+    }
     this_second = myTZ.second();
-    ones = this_second % 10;
+    singles = this_second % 10;
     tens = this_second / 10;
-    separation_char = (ones % 2) ? ' ' : ':';
+    separation_char = (singles % 2) ? ' ' : ':';
 
     if (gConf.useSoftBlend) {
-      sprintf(timeStr, "**%c**%c*%1d", separation_char, separation_char, ones);
-      nixiePrint(0, timeStr, 1);
-      sprintf(timeStr, "%02d*%02d*%1d*", myTZ.hour(), myTZ.minute(), tens);
+      sprintf(timeStr+2, "*%02d*%1d*", myTZ.minute(), tens);
       nixiePrint(0, timeStr, 2);
+      sprintf(timeStr, "**%c**%c*%1d", separation_char, separation_char, singles);
+      nixiePrint(0, timeStr, 1);
     } else {
-      sprintf(timeStr, "%02d%c%02d%c%02d", hour, separation_char, myTZ.minute(), separation_char, myTZ.second());
+      sprintf(timeStr+2, "%c%02d%c%02d", separation_char, myTZ.minute(), separation_char, myTZ.second());
       nixiePrint(0, timeStr, 0);
     }
 

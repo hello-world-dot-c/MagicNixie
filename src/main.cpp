@@ -103,7 +103,7 @@ void setup() {
   setupNixie();
 
   memset(&gConf, 0, sizeof(gConf_t));
-  delay(1000);
+  gConf.useSoftBlend = true;
   Serial.flush();
   while(!Serial){} // Waiting for serial connection
 

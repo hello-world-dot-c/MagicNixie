@@ -1,5 +1,5 @@
 /*
-  Scriptfiles for IKEA hack file: Bootstrap_grid_1.html
+  Scriptfile for MagicNixie file: MagicNixieWeb.html
 */
 function hexFromRGB(r, g, b) 
 {
@@ -33,7 +33,7 @@ function getRandomColor()
 
 function changeColors() 
 {
-	document.getElementById("square").style.backgroundColor = getRandomColor();
+	document.getElementById("square").style.backgroundColor = hexFromRGB( Number(red_slider.value), Number(green_slider.value), Number(blue_slider.value) );
 }
 
 function mySliderFunction(type, val) 
@@ -42,8 +42,8 @@ function mySliderFunction(type, val)
 	if( type === 'colour' )
 	{
 		var valStr = "RED=" + red_slider.value + "&GREEN=" + green_slider.value + "&BLUE=" + blue_slider.value;
-		// Skal skrives sådan: "#00FF00"
-		// Skal huske at konverter til Number, ellers fungerer toString(16) ikke.		
+		// Must be written like this: "#00FF00"
+		// Must remember to convert to number, otherwise toString (16) will not work.		
 		document.getElementById("square").style.backgroundColor = hexFromRGB( Number(red_slider.value), Number(green_slider.value), Number(blue_slider.value) );		
 	}
 	else if( type === 'bright' )
@@ -54,8 +54,8 @@ function mySliderFunction(type, val)
 	{
 		var valStr = "DELAY=" + val.toString();	
 	}
-	// Skal skrives sådan: "#00FF00"
-	// Skal huske at konverter til Number, ellers fungerer toString(16) ikke.
+	// Must be written like this: "#00FF00"
+	// Must remember to convert to number, otherwise toString (16) will not work.
   //document.getElementById("square").style.backgroundColor = hexFromRGB( Number(red_slider.value), Number(green_slider.value), Number(blue_slider.value) );
 	client.open("POST", "/", true);
 	client.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -68,32 +68,32 @@ function buttonSubmit(button)
 	var client = new XMLHttpRequest();
 	if( button === 'rainbow' )
 	{
-		var valStr = "SCEENE=RAINBOW";
-		document.getElementById("activeSceene").innerHTML = "Rainbow is active";
+		var valStr = "SCENE=RAINBOW";
+		document.getElementById("activeScene").innerHTML = "Rainbow is active";
 		document.getElementById("activeButton").innerHTML = "";
 	}
 	else if( button === 'static' )
 	{
 		var valStr = "COLOUR=STATIC";
 		document.getElementById("activeButton").innerHTML = "Static is active";
-		document.getElementById("activeSceene").innerHTML = "";
+		document.getElementById("activeScene").innerHTML = "";
 	}
 	else if( button === 'rainbowcycle' ) // Rainbowcycle
 	{
-		var valStr = "SCEENE=RAINBOWCYCLE";
-		document.getElementById("activeSceene").innerHTML = "Rainbowcycle is active";
+		var valStr = "SCENE=RAINBOWCYCLE";
+		document.getElementById("activeScene").innerHTML = "Rainbowcycle is active";
 		document.getElementById("activeButton").innerHTML = "";
 	}
 	else if( button === 'fade' )
 	{
 		var valStr = "COLOUR=FADE";
 		document.getElementById("activeButton").innerHTML = "Fade is active";
-		document.getElementById("activeSceene").innerHTML = "";
+		document.getElementById("activeScene").innerHTML = "";
 	}
 	else if( button === 'candle' )
 	{
-		var valStr = "SCEENE=CANDLE";
-		document.getElementById("activeSceene").innerHTML = "Candle is active";
+		var valStr = "SCENE=CANDLE";
+		document.getElementById("activeScene").innerHTML = "Candle is active";
 		document.getElementById("activeButton").innerHTML = "";
 		// Slet den anden 
 	}
