@@ -92,6 +92,7 @@ static struct {
   uint16_t max;
   uint16_t fade_max;
   int      analog_val;
+  int      analog_max;
   uint8_t  digital_val;
 } fadingCtrl;
 
@@ -240,6 +241,10 @@ void taskNixieSlowUpdate() {
     }
   }
 
+  fadingCtrl.analog_max = (gConf.nixieBrightness * PWMRANGE) / 100;
+  if (gConf.nixieBrightness<100) {
+    fadingCtrl.analog_val = fadingCtrl.analog_max;
+  }
   if (fadingCtrl.active) {
     fadingCtrl.ctr++;
     if (fadingCtrl.fade_max == fadingCtrl.ctr) {
@@ -251,13 +256,13 @@ void taskNixieSlowUpdate() {
       }
     }
     if (fadingCtrl.ctr <= fadingCtrl.fade_max) {
-      fadingCtrl.analog_val = (fadingCtrl.ctr * PWMRANGE) / fadingCtrl.fade_max;
+      fadingCtrl.analog_val = (fadingCtrl.ctr * fadingCtrl.analog_max) / fadingCtrl.fade_max;
       if (!fadingCtrl.fading_in) {
-        fadingCtrl.analog_val = PWMRANGE - fadingCtrl.analog_val;
+        fadingCtrl.analog_val = fadingCtrl.analog_max - fadingCtrl.analog_val;
       }
     }
   }
-  if (fadingCtrl.active) {
+  if (fadingCtrl.active || (gConf.nixieBrightness<100)) {
     analogWrite(PIN_SHDN, fadingCtrl.analog_val);  // PWM to control brightness for all nixies
   } else {
     digitalWrite(PIN_SHDN, fadingCtrl.digital_val); // Control nixie driver

@@ -137,31 +137,39 @@ void saveConfig() {
     // Save present configuration in EEPROM.
   EEPROM.begin(NVOL_SIZE); // Needed in order to start read or write to flash.
   datPtr = (uint8_t *)&gConf;
+  _PP(MODULE"Writing EEPROM: ");
   for (i=0; i<sizeof(gConf_t); i++) {
     crc = calculateCRC8(*datPtr,false);
     EEPROM.write(NVOL_START_SETTINGS+i, *datPtr);
+    _PF("%02X ", *datPtr);
     datPtr++;
   }
   EEPROM.write(NVOL_START_SETTINGS+i, crc);
+  _PF("%02X\n", crc);
   EEPROM.commit(); // Needed in order to save content to flash.
 }
 
 bool readConfig() {
   uint8_t *datPtr;
   uint16_t i;
-  uint8_t crc;
+  uint8_t rcrc;
+  uint8_t ccrc;
   gConf_t tmp_conf;
 
   calculateCRC8(0,true);
     // Save present configuration in EEPROM.
   EEPROM.begin(NVOL_SIZE); // Needed in order to start read or write to flash.
   datPtr = (uint8_t *)&tmp_conf;
+  _PP(MODULE"Reading EEPROM: ");
   for (i=0; i<sizeof(gConf_t); i++) {
     *datPtr = EEPROM.read(NVOL_START_SETTINGS+i);
-    crc = calculateCRC8(*datPtr,false);
+    _PF("%02X ", *datPtr);
+    ccrc = calculateCRC8(*datPtr,false);
     datPtr++;
   }
-  if (crc == EEPROM.read(NVOL_START_SETTINGS+i)) {
+  rcrc = EEPROM.read(NVOL_START_SETTINGS+i);
+  _PF("%02X\n", rcrc);
+  if (ccrc == rcrc) {
     memcpy(&gConf, &tmp_conf, sizeof(gConf_t));
     _PL(MODULE"Configuration settings restored from EEPROM");
     return true;
@@ -182,6 +190,7 @@ void setup() {
   Serial.flush();
   while(!Serial){} // Waiting for serial connection
 
+  delay(1000);
   _PL(MAGICNIXIE_VERSION);
   _PF(MODULE"CPU frequency: %d MHz\n", system_get_cpu_freq());
 
@@ -196,7 +205,7 @@ void setup() {
     gConf.altDisplayDuration_ms = 5000; 
     gConf.altFadeSpeed_ms = 800;
     gConf.altFadeDarkPause_ms = 400;
-    gConf.antiPoisoningLevel = 20;
+    gConf.antiPoisoningLevel = 2;
     gConf.ledRed = 30;
     gConf.ledGreen = 220; 
     gConf.ledBlue = 60; 
