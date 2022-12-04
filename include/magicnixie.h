@@ -83,15 +83,21 @@ typedef enum {
 } gShowContent_t;
 
 typedef struct {
-  bool use12hDisplay;
-  bool omitLeading0Hour;  
-  bool useSoftBlend;
-  bool syncRTC;
+  bool     use12hDisplay;
+  bool     omitLeading0Hour;  
+  bool     useSoftBlend;
+  bool     syncRTC;
+  uint8_t  nixieBrightness;
   uint16_t altDisplayPeriod_s;
   uint16_t altDisplayDuration_ms;  
   uint16_t altFadeSpeed_ms;
   uint16_t altFadeDarkPause_ms;
- } gConf_t;
+  uint8_t  antiPoisoningLevel;
+  uint8_t  ledRed;
+  uint8_t  ledGreen; 
+  uint8_t  ledBlue; 
+  uint8_t  ledBrightness;
+} gConf_t;
 
 extern gConf_t gConf;
 
@@ -102,7 +108,9 @@ PUBLIC FUNCTIONS
 void keypressWait();
 boolean isNumeric(String str);
 String formatBytes(size_t bytes);
-
+uint8_t calculateCRC8(uint8_t data,bool reset);
+void saveConfig();
+bool readConfig();
 
 #endif // _MAGICNIXIE_H_
 /* EOF */

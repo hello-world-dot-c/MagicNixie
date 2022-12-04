@@ -95,25 +95,114 @@ String formatBytes(size_t bytes)  // convert sizes in bytes to KB and MB
   return "";
 }
 
+/*--------------------------------------------------------------------*/
+/*  Utility function                                                  */
+/*  Calculates the CRC8 checksum for a byte stream.                   */
+/*  Returns urrent CRC8 checksum.                                     */
+/*------------------------------------------------------------------- */
+uint8_t calculateCRC8 (
+  uint8_t data,  // New data byte for CRC8 calculation
+  bool reset     // if true, reset algorithm to start new CRC, data is ignored
+  )
+{
+  static uint8_t crc = 0;
+  uint8_t i        = 0x00U;
+  uint8_t feedback = 0x00U;
+  uint8_t temp     = 0x00U;
+
+  if (reset) {
+    crc = 0;
+    return 0;
+  }
+
+  // Calculate CRC-8
+  for (i = 0; i < 8; i++) {
+    feedback  = (crc & 0x01U);
+    crc     >>= 1;
+    temp      = feedback ^ (data & 0x01U);
+    if ( temp != 0x00U ) {
+      crc ^= 0x9C;  // Preferred polynomial
+    }
+    data >>= 1;
+  }
+  return (crc);
+}
+
+void saveConfig() {
+  uint8_t *datPtr;
+  uint16_t i;
+  uint8_t crc;
+
+  calculateCRC8(0,true);
+    // Save present configuration in EEPROM.
+  EEPROM.begin(NVOL_SIZE); // Needed in order to start read or write to flash.
+  datPtr = (uint8_t *)&gConf;
+  for (i=0; i<sizeof(gConf_t); i++) {
+    crc = calculateCRC8(*datPtr,false);
+    EEPROM.write(NVOL_START_SETTINGS+i, *datPtr);
+    datPtr++;
+  }
+  EEPROM.write(NVOL_START_SETTINGS+i, crc);
+  EEPROM.commit(); // Needed in order to save content to flash.
+}
+
+bool readConfig() {
+  uint8_t *datPtr;
+  uint16_t i;
+  uint8_t crc;
+  gConf_t tmp_conf;
+
+  calculateCRC8(0,true);
+    // Save present configuration in EEPROM.
+  EEPROM.begin(NVOL_SIZE); // Needed in order to start read or write to flash.
+  datPtr = (uint8_t *)&tmp_conf;
+  for (i=0; i<sizeof(gConf_t); i++) {
+    *datPtr = EEPROM.read(NVOL_START_SETTINGS+i);
+    crc = calculateCRC8(*datPtr,false);
+    datPtr++;
+  }
+  if (crc == EEPROM.read(NVOL_START_SETTINGS+i)) {
+    memcpy(&gConf, &tmp_conf, sizeof(gConf_t));
+    _PL(MODULE"Configuration settings restored from EEPROM");
+    return true;
+  } else {
+    _PL(MODULE"Configuration settings not restored from EEPROM, CRC mismatch");
+    return false;
+  }
+}
+
+
 void setup() {
-  // Init UART for debugging output.
-  Serial.begin(921600);
   // Initialize critical hardware first
   setupLeds();
   setupNixie();
 
-  memset(&gConf, 0, sizeof(gConf_t));
-  gConf.useSoftBlend = true;
-  gConf.altDisplayPeriod_s = 45; 
-  gConf.altDisplayDuration_ms = 5000;
-  gConf.altFadeSpeed_ms = 800;
-  gConf.altFadeDarkPause_ms = 400;
+  // Init UART for debugging output.
+  Serial.begin(921600);
   Serial.flush();
   while(!Serial){} // Waiting for serial connection
 
   _PL(MAGICNIXIE_VERSION);
   _PF(MODULE"CPU frequency: %d MHz\n", system_get_cpu_freq());
 
+  if (!readConfig()) {
+    memset(&gConf, 0, sizeof(gConf_t));
+    gConf.use12hDisplay = false;
+    gConf.omitLeading0Hour = false;
+    gConf.useSoftBlend = true;
+    gConf.syncRTC = true;
+    gConf.nixieBrightness = 100;
+    gConf.altDisplayPeriod_s = 45;
+    gConf.altDisplayDuration_ms = 5000; 
+    gConf.altFadeSpeed_ms = 800;
+    gConf.altFadeDarkPause_ms = 400;
+    gConf.antiPoisoningLevel = 20;
+    gConf.ledRed = 30;
+    gConf.ledGreen = 220; 
+    gConf.ledBlue = 60; 
+    gConf.ledBrightness = 50;
+  }
+  
   if (SPIFFS.begin()) {  
 //    SPIFFS.format();    
     // Start the SPIFFS and list all contents

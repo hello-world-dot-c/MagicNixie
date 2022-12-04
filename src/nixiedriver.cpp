@@ -47,6 +47,8 @@ DEFINITIONS AND SETTINGS
 #error Cannot do the blend with the given settings
 #endif
 
+#define ANTI_POISONING_SWITCH_PERIOD_S 5
+
 
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
@@ -93,8 +95,16 @@ static struct {
   uint8_t  digital_val;
 } fadingCtrl;
 
+static struct {
+  uint16_t ctr;
+  struct {
+    uint8_t cur;
+    uint8_t min;
+    uint8_t max;
+  } digit[6];
+} antiPoisoning;
+
 static bool selfTest = false;
-static int selfTestCnt;
 
 
 /**************************************************************************
@@ -108,8 +118,8 @@ PUBLIC FUNCTIONS
 void taskNixieFastUpdate() {
   if (t_NixieFastUpdate.isFirstIteration()) {
   }
-  static uint64_t dmem_out;
   static uint8_t blend_ticks = 1;
+  static uint64_t dmem_out; // safer to make it static since we hand this data over to SPI transfer
   uint8_t num_phase;
   uint8_t slice_in_phase;
 
@@ -140,6 +150,22 @@ void taskNixieFastUpdate() {
     }
   }
 
+  if (gConf.antiPoisoningLevel > 0) {
+    if (antiPoisoning.ctr < gConf.antiPoisoningLevel) {
+      uint64_t ap_out = 0;
+      for (int digitpos=0; digitpos<6; digitpos++) {
+        if (antiPoisoning.digit[digitpos].min != 0xFF) {
+          ap_out |= (1ULL << (digitBitNum[digitpos][antiPoisoning.digit[digitpos].cur] -1));
+        }
+      }
+      dmem_out |= ap_out;
+    }
+    antiPoisoning.ctr++;
+    if (antiPoisoning.ctr>=1000) {
+      antiPoisoning.ctr = 0;
+    }
+  }
+
   // Update complete shift register, then latch to outputs
   SPI.transfer(&dmem_out, sizeof(dmem_out));
   digitalWrite(PIN_LE, HIGH);
@@ -148,23 +174,27 @@ void taskNixieFastUpdate() {
 
 
 void taskNixieSlowUpdate() {
-  static byte next_full_second;
+  static uint32_t next_full_second;
+  static int tickCnt = 0;
 
   if (t_NixieSlowUpdate.isFirstIteration()) {
     t_TimeFastUpdate.disable();  // stop time display, normally not necessary at this time
-    selfTestCnt = 0;
+    tickCnt = 0;
     selfTest = true;
     _PL(MODULE"Self test started");
     next_full_second = 1;
     nixieFade(true,5000, 0);
   }
 
+  tickCnt++;
+
   if (selfTest) {
-    selfTestCnt++;
-    if (selfTestCnt == ND_SECONDS_BY_TICKS(next_full_second)) {
+    if (tickCnt == ND_SECONDS_BY_TICKS(next_full_second)) {
       if (next_full_second == 12) {  // self test finished
         t_TimeFastUpdate.enable();  // start time display
+        endLedsSelfTest();
         selfTest = false;
+        next_full_second += ANTI_POISONING_SWITCH_PERIOD_S;
       } else {
         byte digit;
         if (next_full_second==1)
@@ -179,6 +209,20 @@ void taskNixieSlowUpdate() {
           sprintf(str, "%d%d%c%d%d%c%d%d", digit, digit, sep, digit, digit, sep, digit, digit);
         nixiePrint(0, str, 0);
         next_full_second++;
+      }
+    }
+  } else {
+    if (tickCnt == ND_SECONDS_BY_TICKS(next_full_second)) {
+      next_full_second += ANTI_POISONING_SWITCH_PERIOD_S;
+      if (gConf.antiPoisoningLevel > 0) {
+        for (int digitpos=0; digitpos<6; digitpos++) {
+          if (antiPoisoning.digit[digitpos].min != 0xFF) {
+            antiPoisoning.digit[digitpos].cur++;
+            if (antiPoisoning.digit[digitpos].cur > antiPoisoning.digit[digitpos].max) {
+              antiPoisoning.digit[digitpos].cur = antiPoisoning.digit[digitpos].min;
+            }
+          }
+        }
       }
     }
   }
@@ -205,6 +249,7 @@ void taskNixieSlowUpdate() {
   } else {
     digitalWrite(PIN_SHDN, fadingCtrl.digital_val); // Control nixie driver
   }
+
 }
 
 
@@ -304,6 +349,8 @@ void setupNixie() {
 
   memset(displayMem, 0, sizeof(displayMem));
   memset(&fadingCtrl, 0, sizeof(fadingCtrl));
+  memset(&antiPoisoning, 0, sizeof(antiPoisoning));
+
   // Set up blend parameters
 #if NIXIE_BLENDS>=1
   displayMem[1].blend_phases = NIXIE_BLEND1_PHASES;
@@ -333,6 +380,26 @@ void setupNixie() {
     digitMask[6+i] &= ~(1ULL << (digitBitNum[6][0+2*i]-1));
     digitMask[6+i] &= ~(1ULL << (digitBitNum[6][1+2*i]-1));
   }
+
+  // Anti-poisoning values
+  antiPoisoning.digit[0].min = gConf.use12hDisplay ? 2 : 3;
+  antiPoisoning.digit[0].max = 9;
+  antiPoisoning.digit[0].cur = antiPoisoning.digit[0].min;
+  antiPoisoning.digit[1].min = 0xFF; // never use anti-poisoning
+  antiPoisoning.digit[1].max = 0xFF; // never use anti-poisoning
+  antiPoisoning.digit[1].cur = antiPoisoning.digit[1].min;
+  antiPoisoning.digit[2].min = 7;
+  antiPoisoning.digit[2].max = 9;
+  antiPoisoning.digit[2].cur = antiPoisoning.digit[2].min;
+  antiPoisoning.digit[3].min = 0xFF; // never use anti-poisoning
+  antiPoisoning.digit[3].max = 0xFF; // never use anti-poisoning
+  antiPoisoning.digit[3].cur = antiPoisoning.digit[3].min;
+  antiPoisoning.digit[4].min = 7;
+  antiPoisoning.digit[4].max = 9;
+  antiPoisoning.digit[4].cur = antiPoisoning.digit[4].min;
+  antiPoisoning.digit[5].min = 0xFF; // never use anti-poisoning
+  antiPoisoning.digit[5].max = 0xFF; // never use anti-poisoning
+  antiPoisoning.digit[5].cur = antiPoisoning.digit[5].min;
 }
 
 /* EOF */

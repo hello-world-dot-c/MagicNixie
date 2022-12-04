@@ -25,6 +25,10 @@
 // Hello prompt
 #define MAGICNIXIE_VERSION "\n\nThis is " MY_NAME " ver: 2020-10-23 v0.1\n\n" 
 
+// NTP settings
+#define TIME_ZONE_STR  "de"
+#define NTP_SERVER_STR "fritz.box" //F("192.168.1.1")
+
 // MQTT settings
 #define MQTT_SERVER "homeslave.fritz.box"
 #define MQTT_SERVER_PORT 1883

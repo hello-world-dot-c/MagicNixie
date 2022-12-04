@@ -23,6 +23,7 @@
 extern void taskLedsUpdate();
 
 // Function prototypes
+void endLedsSelfTest();
 void setupLeds();
 
 #endif // _LEDS_H_

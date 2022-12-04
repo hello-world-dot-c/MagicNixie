@@ -21,24 +21,6 @@
 
 #define DEBUG    1 // 0: No debug info. 1: Show debug info.
 
-/*----|| #DEFINES ||--------------------------------------------*/ 
-#define W_BEGIN      ( 0+NVOL_START_SETTINGS) // Single byte variable
-#define L_STATUS     ( 1+NVOL_START_SETTINGS) // Single byte variable
-#define C_RED        ( 2+NVOL_START_SETTINGS) // Single byte variable
-#define C_GREEN      ( 3+NVOL_START_SETTINGS) // Single byte variable
-#define C_BLUE       ( 4+NVOL_START_SETTINGS) // Single byte variable
-#define BRIGHTNESS   ( 5+NVOL_START_SETTINGS) // Single byte variable
-#define DELAY        ( 6+NVOL_START_SETTINGS) // Single byte variable 
-#define RAINBOWCYCLE ( 7+NVOL_START_SETTINGS) // Single byte variable 
-#define RAINBOW      ( 8+NVOL_START_SETTINGS) // Single byte variable
-#define STATIC       ( 9+NVOL_START_SETTINGS) // Single byte variable 
-#define FADE         ( 9+NVOL_START_SETTINGS) // Single byte variable
-#define CANDLE       (10+NVOL_START_SETTINGS) // Single byte variable
-#define SCENE1       (11+NVOL_START_SETTINGS) // Dummy for additional scenes
-#define SCENE2       (12+NVOL_START_SETTINGS) // Dummy for additional scenes
-#define SCENE3       (13+NVOL_START_SETTINGS) // Dummy for additional scenes
-/*----|| #DEFINES-end ||----------------------------------------*/
-
 
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
@@ -51,21 +33,6 @@ String HTMLMainFile = "/MagicNixieWeb.html"; // The main HTML file to load
 /**************************************************************************
 LOCAL VARIABLES/CLASSES
 ***************************************************************************/
-/* Configuration variables ------------ */
-byte lampStatus       = 1;  // 0 or 1.
-byte lampRed          = 255;// 0 - 255
-byte lampGreen        = 0;  // 0 - 255
-byte lampBlue         = 0;  // 0 - 255
-byte lampBrightness   = 255;// 0 - 255
-byte lampDelay        = 20; // 0 - 255
-byte lampRainbowCycle = 0;  // 0 or 1.
-byte lampRainbow      = 1;  // 0 or 1.
-byte lampStatic       = 0;  // 0 or 1.
-byte lampFade         = 0;  // 0 or 1.
-byte lampCandle       = 0;  // 0 or 1.
-// Add additinal scene variables here.
-/* Configuration variables END ------- */
-
 byte handleApi = 0; // 1: Received a HTTP POST request via API interface. 
 
 // See the description in the documentation
@@ -147,30 +114,30 @@ void handleRoot()
 
   if( DEBUG ) Serial.println(MODULE"** HandleRoot called.");    
   
-  if (server.hasArg("LAMP") )
+  if (server.hasArg("BLEND") )
   {
-    str = server.arg("LAMP");
+    str = server.arg("BLEND");
     if ( str == "1" ) 
     {
-      // Received LAMP=1
-      lampStatus = 1;
+      // Received BLEND=1
+      gConf.useSoftBlend = 1;
 //      EEPROM.write(L_STATUS, 1); // Save new lamp status
 //      EEPROM.commit();           // Needed in order to save content to flash.
-      if( DEBUG ) Serial.println(MODULE"**  LAMP ON.");
+      if( DEBUG ) Serial.println(MODULE"**  BLEND ON.");
       if( handleApi )
       {  // Request received via API
          server.send ( 200, "text/html", "OK" ); // Return OK
       }
 
-      if( DEBUG ) Serial.println(MODULE"**  New lamp status saved (ON).");
+      if( DEBUG ) Serial.println(MODULE"**  New blending status saved (ON).");
     } 
     else if ( str == "0" ) 
     {
-      // Received LAMP=0
-      lampStatus = 0;
+      // Received BLEND=0
+      gConf.useSoftBlend = 0;
 //      EEPROM.write(L_STATUS, 0); // Save new lamp status
 //      EEPROM.commit();           // Needed in order to save content to flash.
-      if( DEBUG ) Serial.println(MODULE"**  LAMP OFF.");
+      if( DEBUG ) Serial.println(MODULE"**  BLEND OFF.");
       if( handleApi )
       {  // Request received via API
          server.send ( 200, "text/html", "OK" ); // Return OK
@@ -193,7 +160,7 @@ void handleRoot()
          server.send ( 200, "text/html", "ERROR" ); // Return OK
       }
     } 
-    if( DEBUG ) Serial.println(MODULE"**  LAMP submit handled.");    
+    if( DEBUG ) Serial.println(MODULE"**  BLEND submit handled.");    
   }
   else if( server.hasArg("RED") || server.hasArg("GREEN") || server.hasArg("BLUE") )
   { 
@@ -207,11 +174,11 @@ void handleRoot()
       if( isNumeric( str ) && (str.toInt() < 256) )
       {
         if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
-        lampRed  = str.toInt();
+        gConf.ledRed  = str.toInt();
         strText += str;
         if( DEBUG ) 
         {
-          Serial.print("**  New RED value set: "); Serial.println(lampRed);
+          Serial.print("**  New RED value set: "); Serial.println(gConf.ledRed);
         }
       }
       else
@@ -233,11 +200,11 @@ void handleRoot()
       if( isNumeric( str ) && (str.toInt() < 256) )
       {
         if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
-        lampGreen = str.toInt();
+        gConf.ledGreen = str.toInt();
         strText  += str;
         if( DEBUG ) 
         {
-          Serial.print("**  New GREEN value set: "); Serial.println(lampGreen);
+          Serial.print("**  New GREEN value set: "); Serial.println(gConf.ledGreen);
         }
       }
       else
@@ -259,11 +226,11 @@ void handleRoot()
       if( isNumeric( str ) && (str.toInt() < 256) )
       {
         if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
-        lampBlue = str.toInt();
+        gConf.ledBlue = str.toInt();
         strText += str;
         if( DEBUG ) 
         {
-          Serial.print("**  New BLUE value set: "); Serial.println(lampBlue);
+          Serial.print("**  New BLUE value set: "); Serial.println(gConf.ledBlue);
         }
       }
       else
@@ -286,62 +253,6 @@ void handleRoot()
     }
 
     if( DEBUG ) Serial.println(MODULE"**  COLOUR submit handled.");  
-
- /*     
-    for( uint16_t i = 0; i < strip.numPixels(); i++) 
-    {
-      strip.setPixelColor(i, strip.Color(lampRed, lampGreen, lampBlue) );
-      strip.show();
-    }
-*/
-  }
-  else if (server.hasArg("SCENE") )
-  {
-    if( DEBUG ) Serial.println(MODULE"** Received SCENE."); 
-    str = server.arg("SCENE");
-    boolean accepted = 1;
-	  if( str == "RAINBOWCYCLE" )
-	  {
-      // Received SCENE=RAINBOWCYCLE
-      if( DEBUG ) Serial.println(MODULE"**  Rainbowcycle");
-      lampRainbowCycle = 1;
-      lampRainbow = lampStatic  = lampFade = lampCandle = 0; 
-	  }
-	  else if( str == "RAINBOW" )
-	  {
-      // Received SCENE=RAINBOW
-      if( DEBUG ) Serial.println(MODULE"**  Rainbow");
-      lampRainbowCycle = 0;
-      lampRainbow = 1;
-	    lampStatic  = lampFade = lampCandle = 0; 
-	  }
-	  else if( str == "CANDLE" )
-	  {
-      // Received SCENE=CANDLE
-      if( DEBUG ) Serial.println(MODULE"**  Candle");
-      lampRainbowCycle = lampRainbow = lampStatic  = lampFade = 0;
-	    lampCandle = 1; 
-	  }
-	  else
-  	{
-      accepted = 0;
-    }
-    if( handleApi )
-    {  // Request received via API
-      if( accepted )
-        server.send ( 200, "text/html", "OK" ); // Return OK
-      else
-        server.send ( 200, "text/html", "ERROR" ); // Return ERROR
-    }
-    else
-    {   
-      if( accepted )
-        strText = "SCENE received correct";
-      else
-        strText = "Incorrect SCENE received";
-      handleFileRead( HTMLMainFile ); // Update WEB interface
-    }
-    if( DEBUG ) Serial.println(MODULE"**  SCENE submit handled."); 
   }
   else if(server.hasArg("BRIGHTNESS") )
   {
@@ -351,7 +262,7 @@ void handleRoot()
     if( isNumeric( str ) && (str.toInt() < 256) )
     {
       if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
-      lampBrightness = str.toInt();
+      gConf.ledBrightness = str.toInt();
       if( handleApi )
       {
         server.send ( 200, "text/html", "OK" ); // Return OK  
@@ -360,11 +271,9 @@ void handleRoot()
       {
         handleFileRead( HTMLMainFile ); // Update WEB interface
       }
-//      strip.setBrightness(lampBrightness);
-//      strip.show();
       if( DEBUG )
       {
-        Serial.print("**  New BRIGHTNESS value set: "); Serial.println(lampBrightness);
+        Serial.print("**  New BRIGHTNESS value set: "); Serial.println(gConf.ledBrightness);
       }          
     }
     else
@@ -382,15 +291,15 @@ void handleRoot()
       }
     }  
   }
-  else if(server.hasArg("DELAY") )
+  else if(server.hasArg("NIXIEBRIGHTNESS") )
   {
-    // Received DELAY=<value>
-    str = server.arg("DELAY");
+    // Received NIXIEBRIGHTNESS=<value>
+    str = server.arg("NIXIEBRIGHTNESS");
     // Check if received value is numeric AND below 256
     if( isNumeric( str ) && (str.toInt() < 256) )
     {
       if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
-      lampDelay = str.toInt();
+      gConf.nixieBrightness = str.toInt();
       if( handleApi )
       {
         server.send ( 200, "text/html", "OK" ); // Return OK  
@@ -401,7 +310,44 @@ void handleRoot()
       }
       if( DEBUG )
       {
-        Serial.print("**  New DELAY value set: "); Serial.println(lampDelay);
+        Serial.print("**  New NIXIEBRIGHTNESS value set: "); Serial.println(gConf.nixieBrightness);
+      }          
+    }
+    else
+    {
+      if( DEBUG ) Serial.println(MODULE"**  Data received are NOT numeric");
+      if( handleApi )
+      {
+        server.send ( 200, "text/html", "ERROR" ); // Return ERROR  
+      }
+      else
+      {
+        strText += "NIXIEBRIGHTNESS error Wrong data: ";
+        strText += str;
+        handleFileRead( HTMLMainFile ); // Update WEB interface
+      }
+    }  
+  }
+  else if(server.hasArg("ANTIPOISON") )
+  {
+    // Received ANTIPOISON=<value>
+    str = server.arg("ANTIPOISON");
+    // Check if received value is numeric AND below 256
+    if( isNumeric( str ) && (str.toInt() < 256) )
+    {
+      if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
+      gConf.antiPoisoningLevel = str.toInt();
+      if( handleApi )
+      {
+        server.send ( 200, "text/html", "OK" ); // Return OK  
+      }
+      else
+      {
+        handleFileRead( HTMLMainFile ); // Update WEB interface
+      }
+      if( DEBUG )
+      {
+        Serial.print("**  New ANTIPOISON value set: "); Serial.println(gConf.antiPoisoningLevel);
       }          
     }
     else
@@ -417,64 +363,10 @@ void handleRoot()
       }
     }  
   }
-  else if(server.hasArg("COLOUR"))
-  {
-	str = server.arg("COLOUR");
-    boolean accepted = 1;
-	if( str == "FADE" )
-	{
-      // Received COLOUR=FADE
-      if( DEBUG ) Serial.println(MODULE"**  Fade");
-      lampRainbowCycle = lampRainbow = lampStatic  = 0;
-	  lampFade = 1;
-	  lampCandle = 0;
-	}
-	else if( str == "STATIC" )
-	{
-    // Received COLOUR=STATIC
-    if( DEBUG ) Serial.println(MODULE"**  Static");
-    lampRainbowCycle = lampRainbow = 0;
-    lampStatic  = 1;
-	  lampFade = lampCandle = 0;
-	}
-	else
-	{
-      accepted = 0;
-	}
-    if( handleApi )
-    {  // Request received via API
-      if( accepted )
-        server.send ( 200, "text/html", "OK" ); // Return OK
-      else
-        server.send ( 200, "text/html", "ERROR" ); // Return ERROR
-    }
-    else
-    {   
-      if( accepted )
-        strText = "COLOUR received correct";
-      else
-        strText = "Incorrect COLOUR received";
-      handleFileRead( HTMLMainFile ); // Update WEB interface
-    }
-    if( DEBUG ) Serial.println(MODULE"**  COLOUR submit handled."); 
-  }
   else if(server.hasArg("SAVE") )
   {
     // Save present configuration in EEPROM.
-    EEPROM.begin(NVOL_SIZE); // Needed in order to start read or write to flash.
-    EEPROM.write(L_STATUS,     lampStatus);
-    EEPROM.write(C_RED,        lampRed);
-    EEPROM.write(C_GREEN,      lampGreen);
-    EEPROM.write(C_BLUE,       lampBlue);
-    EEPROM.write(BRIGHTNESS,   lampBrightness);
-    EEPROM.write(DELAY,        lampDelay);	
-    EEPROM.write(RAINBOWCYCLE, lampRainbowCycle);	
-    EEPROM.write(RAINBOW,      lampRainbow);
-    EEPROM.write(STATIC,       lampStatic);
-    EEPROM.write(FADE,         lampFade);
-    EEPROM.write(CANDLE,       lampCandle);
-    // Comment: We dont save the SSID or Password to the WiFi as it is already saved in EEPROM.
-    EEPROM.commit(); // Needed in order to save content to flash.
+    saveConfig();
     
     if( handleApi )
     {  // Request received via API
@@ -532,67 +424,59 @@ void MagicNixieWeb_loadScript ()
   Serial.println(MODULE"Received request");
   Serial.println(MODULE"  handleFileRead: MagicNixieWeb_load.js");
   
-  String lampON = "OFF";
-  String lampChecked = "false";
-  if (lampStatus ) 
+  String softBlendON = "OFF";
+  String softBlendChecked = "false";
+  if (gConf.useSoftBlend) 
   {
-	  lampON = "ON";
-	  lampChecked = "true";
+	  softBlendON = "ON";
+	  softBlendChecked = "true";
   }
-  String scene = "";
-  String colour = "";
-  if( lampRainbowCycle ) scene = "Rainbowcycle is active.";
-  else if( lampRainbow ) scene = "Rainbow is active.";
-  else if( lampCandle ) scene = "Candle is active.";
-  else if( lampStatic ) colour = "Static is active.";
-  else if( lampFade ) colour = "Fade is active.";
-  else scene = "Unkown is active.";
   String temp  = "document.addEventListener('DOMContentLoaded', function ()\n";
          temp += "{\n";
-         temp += "  document.getElementById(\"activeScene\").innerHTML = \"";
-         temp += scene;
+         temp += "  document.getElementById(\"blendingOnOffButton\").checked = \"";
+         temp += softBlendChecked;
          temp += "\";\n";
-         temp += "  document.getElementById(\"activeButton\").innerHTML = \"";
-         temp += colour;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"onOffButton\").checked = \"";
-         temp += lampChecked;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"lampStatus\").innerHTML = \"";
-         temp += lampON;
+         temp += "  document.getElementById(\"blendingStatus\").innerHTML = \"";
+         temp += softBlendON;
          temp += "\";\n";
          temp += "  document.getElementById(\"brightnessSlider\").value = \"";
-         temp += lampBrightness;
+         temp += gConf.ledBrightness;
          temp += "\";\n";
          temp += "  document.getElementById(\"brightnessValue\").innerHTML = \"";
-         temp += lampBrightness;
+         temp += gConf.ledBrightness;
          temp += "\";\n";
-         temp += "  document.getElementById(\"delaySlider\").value = \"";
-         temp += lampDelay;
+         temp += "  document.getElementById(\"nixieBrightnessSlider\").value = \"";
+         temp += gConf.nixieBrightness;
          temp += "\";\n";
-         temp += "  document.getElementById(\"delayValue\").innerHTML = \"";
-         temp += lampDelay;
+         temp += "  document.getElementById(\"nixieBrightnessValue\").innerHTML = \"";
+         temp += gConf.nixieBrightness;
+         temp += "\";\n";
+         temp += "  document.getElementById(\"antiPoisonSlider\").value = \"";
+         temp += gConf.antiPoisoningLevel;
+         temp += "\";\n";
+         temp += "  document.getElementById(\"antiPoisonValue\").innerHTML = \"";
+         temp += gConf.antiPoisoningLevel;
          temp += "\";\n";
          temp += "  document.getElementById(\"redSlider\").value = \"";
-         temp += lampRed;
+         temp += gConf.ledRed;
          temp += "\";\n";
          temp += "  document.getElementById(\"redValue\").innerHTML = \"";
-         temp += lampRed;
+         temp += gConf.ledRed;
          temp += "\";\n";
          temp += "  document.getElementById(\"greenSlider\").value = \"";
-         temp += lampGreen;
+         temp += gConf.ledGreen;
          temp += "\";\n";
          temp += "  document.getElementById(\"greenValue\").innerHTML = \"";
-         temp += lampGreen;
+         temp += gConf.ledGreen;
          temp += "\";\n";
          temp += "  document.getElementById(\"blueSlider\").value = \"";
-         temp += lampBlue;
+         temp += gConf.ledBlue;
          temp += "\";\n";
          temp += "  document.getElementById(\"blueValue\").innerHTML = \"";
-         temp += lampBlue;
+         temp += gConf.ledBlue;
          temp += "\";\n";
          temp += "  document.getElementById(\"square\").style.backgroundColor = \"#";
-         temp += hexFromRGB(lampRed, lampGreen, lampBlue);
+         temp += hexFromRGB(gConf.ledRed, gConf.ledGreen, gConf.ledBlue);
          temp += "\";\n";
          temp += "}, false);\n";
 		 
@@ -636,59 +520,7 @@ void taskWebRun() {
 }
 
 void setupWeb() {
-  // Init or read EEPROM settings. --------------------------
-  Serial.println(MODULE"** EEPROM Setup started");
-  EEPROM.begin(NVOL_SIZE); // Needed in order to start read or write to flash.
-  
-  // See if any old settings are saved (Addr 0 contains 72).
-  if( EEPROM.read(W_BEGIN) != 72 )
-  {  // Save default configuration.
-     Serial.println("**  No default configuration found, saving default");
-     EEPROM.write(W_BEGIN,      72); // From now on new values will be saved.
-     EEPROM.write(L_STATUS,     lampStatus);
-     EEPROM.write(C_RED,        lampRed);
-     EEPROM.write(C_GREEN,      lampGreen);
-     EEPROM.write(C_BLUE,       lampBlue);
-     EEPROM.write(BRIGHTNESS,   lampBrightness);
-     EEPROM.write(DELAY,        lampDelay);
-     EEPROM.write(RAINBOWCYCLE, lampRainbowCycle);     
-     EEPROM.write(RAINBOW,      lampRainbow);
-     EEPROM.write(STATIC,       lampStatic);
-     EEPROM.write(FADE,         lampFade);
-     EEPROM.write(CANDLE,       lampCandle);
-     EEPROM.commit(); // Needed in order to save content to flash.
-  }
-  
-  // load saved configuration.
-  lampStatus       = EEPROM.read(L_STATUS);
-  lampRed          = EEPROM.read(C_RED);
-  lampGreen        = EEPROM.read(C_GREEN);
-  lampBlue         = EEPROM.read(C_BLUE);
-  lampBrightness   = EEPROM.read(BRIGHTNESS);
-  lampDelay        = EEPROM.read(DELAY);
-  lampRainbowCycle = EEPROM.read(RAINBOWCYCLE);
-  lampRainbow      = EEPROM.read(RAINBOW);
-  lampStatic       = EEPROM.read(STATIC);
-  lampFade         = EEPROM.read(FADE);
-  lampCandle       = EEPROM.read(CANDLE);
-  if( DEBUG ) 
-  {
-    Serial.print("**  Lamp status loaded: "); Serial.println(lampStatus);
-    char  text[300];
-    sprintf(text, "**  Colours loaded: %d, %d, %d", lampRed, lampGreen, lampBlue); 
-    Serial.println(text);
-    Serial.print("**  Lamp brightness loaded: "); Serial.println(lampBrightness);
-    Serial.print("**  Lamp delay loaded: "); Serial.println(lampDelay);      
-    if( lampRainbowCycle ) Serial.println(MODULE"**  Rainbow cycle selected.");
-    if( lampRainbow ) Serial.println(MODULE"**  Rainbow selected.");
-    if( lampStatic ) Serial.println(MODULE"**  Static colour selected.");
-    if( lampFade ) Serial.println(MODULE"**  Fade selected.");
-    if( lampCandle ) Serial.println(MODULE"**  Candle selected.");
-  }
-
-  Serial.println(MODULE"** EEPROM config loaded.");
-  // Init or read EEPROM settings. END ----------------------
-  	 
+  // nothing to be done yet  	 
 }
 
 /* EOF */

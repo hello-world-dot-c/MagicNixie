@@ -16,32 +16,25 @@
 <style>
 
 </style>
-<div class="container" style="position: relative; height:900px; width:355px; top:10%; background-color:white;">
+<div class="container" style="position: relative; height:900px; width:360px; top:10%; background-color:white;">
 	<center><h2>MagicNixie Panel</h2></center>
 	<div class="container" style="background: #ffffff url('main_background.svg') no-repeat; position: absolute; height: 810px; width: 340px;  top:7%;  z-index:9999; ">
-	  
-	  <!-- ON/OFF button -->
-	  <div class="row" style="width: 100%; position: absolute; top: 30px; ">
-		<div class="col-xs-8" style="background-color: light-grey; ">
-			<p>This device is <span id="lampStatus"></span></p>
-		</div>	  
-		<div class="col-xs-4" style="background-color: light-grey; ">
-			<label class="switch">
-			  <input id="onOffButton" type="checkbox">
-			  <div class="onOff_slider round"></div>
-			</label>
+
+	  <div class="row" style="width: 100%; position: absolute; top: 20px;" >
+		<div class="col-xs-12" >
+		<B>LED Settings </B> <span id="ledSettinsLabel"></span>
 		</div>
 	  </div>	  
-	  
-	  <!-- Brightness slider --> 
-	  <div class="row" style="width: 100%; position: absolute; top: 80px; ">
+
+	  <!-- LED brightness slider --> 
+	  <div class="row" style="width: 100%; position: absolute; top: 60px; ">
 		<div class="col-xs-2" style="background-color: light-grey; ">
 			<img src="brightnessLow.svg">
 		</div>	  
 		<div class="col-xs-8" style="background-color:white; ">
 			<div class="slidecontainer" style="">
-				<input type="range" min="1" max="100" value="50" class="slider" id="brightnessSlider" onchange="mySliderFunction('bright', this.value)">
-				<span id="brightnessValue"></span>
+				<input type="range" min="1" max="100" value="50" class="slider" id="ledBrightnessSlider" onchange="mySliderFunction('ledbright', this.value)">
+				<span id="ledBrightnessValue"></span>
 			</div>
 		</div>
 		<div class="col-xs-2" style="background-color: light-grey; ">
@@ -49,88 +42,18 @@
 		</div>
 	  </div>
 
-	  <!-- Delay slider --> 
-	  <div class="row" style="width: 100%; position: absolute; top: 120px; ">
-		<div class="col-xs-2" style="background-color: light-grey; ">
-		<img src="delayLeft.svg">
-		</div>	  
-		<div class="col-xs-8" style="background-color:white; ">
-			<div class="slidecontainer" style="">
-				<input type="range" min="1" max="255" value="50" class="slider" id="delaySlider" onchange="mySliderFunction('delay', this.value)">
-				<span id="delayValue"></span>
-			</div>
-		</div>
-		<div class="col-xs-2" style="background-color: light-grey; ">
-		<img src="delayRight.svg">
-		</div>
-	  </div>
-
-	  <div class="row" style="width: 100%; position: absolute; top: 160px;" >
-		<div class="col-xs-12" >
-		<B>Scenes </B> <span id="activeScene"></span>
-		</div>
-	  </div>	  
-	  
-	  <!-- Rainbow & Candle buttons -->
-	  <div class="row" style="width: 100%; position: absolute; top: 185px;" >
-		<div class="col-xs-6" >
-		  <div class="buttoncontainer" >
-			<button class="buttonClick" onclick="buttonSubmit('rainbow')">RAINBOW</button>
-		  </div>
-		</div>
-		<div class="col-xs-6" >
-		  <div class="buttoncontainer" >
-			<button class="buttonClick" onclick="buttonSubmit('candle')">CANDLE</button>
-		  </div>
-		</div>		
-	  </div>
-	  
-	  <!-- Rainbowcycle button -->
-	  <div class="row" style="width: 100%; position: absolute; top: 260px;" >
-		<div class="col-xs-6" >
-		  <div class="buttoncontainer" >
-			<button class="buttonClick" onclick="buttonSubmit('rainbowcycle')">RAINBOWCYCLE</button>
-		  </div>
-		</div>
-		<div class="col-xs-6" >
-		  <div class="buttoncontainer" >
-
-		  </div>
-		</div>		
-	  </div>	  
-
-	  <div class="row" style="width: 100%; position: absolute; top: 330px;" >
-		<div class="col-xs-6" >
-		<B>Colour </B> <span id="activeButton"></span>
-		</div>
-	  </div>	  
-
-	  <!-- Statis & Fade buttons -->
-	  <div class="row" style="width: 100%; position: absolute; top: 355px;" >
-		<div class="col-xs-6" >
-		  <div class="buttoncontainer" >
-			<button class="buttonClick" onclick="buttonSubmit('static')">STATIC</button>
-		  </div>
-		</div>
-		<div class="col-xs-6" >
-		  <div class="buttoncontainer" >
-			<button class="buttonClick" onclick="buttonSubmit('fade')">FADE</button>
-		  </div>
-		</div>		
-	  </div>	  
-	  
 	  <!-- Red slider -->
-	  <div class="row" style="width: 100%; position: absolute; top: 450px;" >
+        <div class="row" style="width: 90%; position: absolute; top: 100px" >
 		<div class="col-xs-12" >
 		  <div class="slidecontainer" >
-			<input type="range" min="0" max="255" value="123" class="slider" id="redSlider" style="background-color:red;" onchange="mySliderFunction('colour', 0)">
+			<input type="range" min="0" max="255" value="123" class="slider" id="redSlider" style="background-color:red" onchange="mySliderFunction('colour', 0)">
 			<span id="redValue"></span>
 		  </div>
 		</div>
 	  </div>
 
-	  <!-- Green slider -->
-	  <div class="row" style="width: 100%; position: absolute; top: 490px;" >
+      <!-- Green slider -->
+	  <div class="row" style="width: 90%; position: absolute; top: 140px;" >
 		<div class="col-xs-12" >
 		  <div class="slidecontainer" >
 			<input type="range" min="0" max="255" value="123" class="slider" id="greenSlider" style="background-color:green;" onchange="mySliderFunction('colour', 0)">
@@ -140,7 +63,7 @@
 	  </div>
 
 	  <!-- Blue slider -->
-	  <div class="row" style="width: 100%; position: absolute; top: 530px;" >
+	  <div class="row" style="width: 90%; position: absolute; top: 180px;" >
 		<div class="col-xs-12" >
 		  <div class="slidecontainer" >
 			<input type="range" min="0" max="255" value="123" class="slider" id="blueSlider" style="background-color:blue;" onchange="mySliderFunction('colour', 0)">
@@ -149,42 +72,84 @@
 		</div>
 	  </div>
 	  
-	  <div class="row" style="width: 100%; position: absolute; top: 570px;">
-		<div class="col-xs-12" style="">
+	  <div class="row" style="width: 90%; position: absolute; top: 220px;">
+		<div class="col-xs-5" style="height: 30px;">Current color</div>
+		<div class="col-xs-7" style="">
 			<div id="square" style="height: 30px; background-color: #555; border-radius: 12px;"></div>
 		</div>
+	  </div>
+
+	  <div class="row" style="width: 100%; position: absolute; top: 280px;" >
+		<div class="col-xs-12" >
+		<B>Nixie Settings </B> <span id="nixieSettinsLabel"></span>
+		</div>
+	  </div>	  
+
+	  <!-- Nixie brightness slider --> 
+	  <div class="row" style="width: 100%; position: absolute; top: 310px; ">
+		<div class="col-xs-2" style="background-color: light-grey; ">
+			<img src="brightnessLow.svg">
+		</div>	  
+		<div class="col-xs-8" style="background-color:white; ">
+			<div class="slidecontainer" style="">
+				<input type="range" min="1" max="100" value="100" class="slider" id="nixieBrightnessSlider" onchange="mySliderFunction('nixiebright', this.value)">
+				<span id="nixieBrightnessValue"></span>
+			</div>
+		</div>
+		<div class="col-xs-2" style="background-color: light-grey; ">
+		<img src="brightnessHigh.svg">
+		</div>
+	  </div>
+
+	  <!-- Blending effect button -->
+	  <div class="row" style="width: 100%; position: absolute; top: 350px; ">
+		<div class="col-xs-8" style="background-color: light-grey; ">
+			<p>Soft blending transitions <span id="blendingStatus"></span></p>
+		</div>	  
+		<div class="col-xs-4" style="background-color: light-grey; ">
+			<label class="switch">
+			  <input id="blendingOnOffButton" type="checkbox">
+			  <div class="onOff_slider round"></div>
+			</label>
+		</div>
+	  </div>	  
+	  
+	  <div class="row" style="width: 100%; position: absolute; top: 390px;" >
+		<div class="col-xs-12">Subliminal anti-poisoning intensity</div>
+	  </div>	  
+
+      <!-- Anti-poison slider --> 
+	  <div class="row" style="width: 90%; position: absolute; top: 420px; ">
+		<div class="col-xs-12" >
+          <div class="slidecontainer" style="">
+                <input type="range" min="0" max="100" value="50" class="slider" id="antiPoisonSlider" onchange="mySliderFunction('antipoison', this.value)">
+                <span id="antiPoisonValue"></span>
+          </div>
+		</div>	  
 	  </div>
 
 	  <!-- Save configuration button -->
 	  <div class="row" style="width: 100%; position: absolute; top: 610px;" >
 		<div class="col-xs-12" >
 		  <div class="buttoncontainer" >
-			<center><button class="buttonClick" onclick="buttonSubmit('save')">Save configuration</button></center>
+			<center><button class="buttonClick" onclick="buttonSubmit('save')">Save </button></center>
 		  </div>
 		</div>
 	  </div>	  	  
 	</div>
 </div>	
+
 <script>
+	var ledbright_slider = document.getElementById("ledBrightnessSlider");
+	var ledbright_output = document.getElementById("ledBrightnessValue");
+	ledbright_output.innerHTML = ledbright_slider.value;
+
+	ledbright_slider.oninput = function() 
+	{
+	  ledbright_output.innerHTML = this.value;
+	}
+
 	
-	var slider = document.getElementById("brightnessSlider");
-	var output = document.getElementById("brightnessValue");
-	output.innerHTML = slider.value;
-
-	slider.oninput = function() 
-	{
-	  output.innerHTML = this.value;
-	}
-
-	var delay_slider = document.getElementById("delaySlider");
-	var delay_output = document.getElementById("delayValue");
-	delay_output.innerHTML = delay_slider.value;
-
-	delay_slider.oninput = function() 
-	{
-	  delay_output.innerHTML = this.value;
-	}
-
 	var red_slider = document.getElementById("redSlider");
 	var red_output = document.getElementById("redValue");
 	red_output.innerHTML = red_slider.value;
@@ -210,6 +175,24 @@
 	blue_slider.oninput = function() 
 	{
 	  blue_output.innerHTML = this.value;
+	}
+
+	var nixiebright_slider = document.getElementById("nixieBrightnessSlider");
+	var nixiebright_output = document.getElementById("nixieBrightnessValue");
+	nixiebright_output.innerHTML = nixiebright_slider.value;
+
+	nixiebright_slider.oninput = function() 
+	{
+	  nixiebright_output.innerHTML = this.value;
+	}
+
+	var delay_slider = document.getElementById("antiPoisonSlider");
+	var delay_output = document.getElementById("antiPoisonValue");
+	delay_output.innerHTML = delay_slider.value;
+
+	delay_slider.oninput = function() 
+	{
+	  delay_output.innerHTML = this.value;
 	}
 
 </script>

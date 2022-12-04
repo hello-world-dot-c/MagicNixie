@@ -46,13 +46,17 @@ function mySliderFunction(type, val)
 		// Must remember to convert to number, otherwise toString (16) will not work.		
 		document.getElementById("square").style.backgroundColor = hexFromRGB( Number(red_slider.value), Number(green_slider.value), Number(blue_slider.value) );		
 	}
-	else if( type === 'bright' )
+	else if( type === 'ledbright' )
 	{
 		var valStr = "BRIGHTNESS=" + val.toString();
 	}
-	else if( type === 'delay' )
+	else if( type === 'nixiebright' )
 	{
-		var valStr = "DELAY=" + val.toString();	
+		var valStr = "NIXIEBRIGHTNESS=" + val.toString();
+	}
+	else if( type === 'antipoison' )
+	{
+		var valStr = "ANTIPOISON=" + val.toString();	
 	}
 	// Must be written like this: "#00FF00"
 	// Must remember to convert to number, otherwise toString (16) will not work.
@@ -66,38 +70,7 @@ function mySliderFunction(type, val)
 function buttonSubmit(button)
 { 
 	var client = new XMLHttpRequest();
-	if( button === 'rainbow' )
-	{
-		var valStr = "SCENE=RAINBOW";
-		document.getElementById("activeScene").innerHTML = "Rainbow is active";
-		document.getElementById("activeButton").innerHTML = "";
-	}
-	else if( button === 'static' )
-	{
-		var valStr = "COLOUR=STATIC";
-		document.getElementById("activeButton").innerHTML = "Static is active";
-		document.getElementById("activeScene").innerHTML = "";
-	}
-	else if( button === 'rainbowcycle' ) // Rainbowcycle
-	{
-		var valStr = "SCENE=RAINBOWCYCLE";
-		document.getElementById("activeScene").innerHTML = "Rainbowcycle is active";
-		document.getElementById("activeButton").innerHTML = "";
-	}
-	else if( button === 'fade' )
-	{
-		var valStr = "COLOUR=FADE";
-		document.getElementById("activeButton").innerHTML = "Fade is active";
-		document.getElementById("activeScene").innerHTML = "";
-	}
-	else if( button === 'candle' )
-	{
-		var valStr = "SCENE=CANDLE";
-		document.getElementById("activeScene").innerHTML = "Candle is active";
-		document.getElementById("activeButton").innerHTML = "";
-		// Slet den anden 
-	}
-	else if( button === 'save' )
+	if( button === 'save' )
 	{
 		var valStr = "SAVE=Save configuration";
 	}
@@ -106,7 +79,7 @@ function buttonSubmit(button)
 	client.send(valStr);
 }
 
-// Captures the lamp ON/OFF event.
+// Captures the blending ON/OFF event.
 document.addEventListener('DOMContentLoaded', function () 
 {
 	var checkbox = document.querySelector('input[type="checkbox"]');
@@ -116,15 +89,15 @@ document.addEventListener('DOMContentLoaded', function ()
 		var client = new XMLHttpRequest();		
 		if (checkbox.checked) 
 		{
-			//Turn lamp ON
-			var valStr = "LAMP=1";
-			document.getElementById("lampStatus").innerHTML = "ON";
+			//Turn blending ON
+			var valStr = "BLEND=1";
+			document.getElementById("blendingStatus").innerHTML = "ON";
 		} 
 		else 
 		{
-			//Turn lamp OFF
-			var valStr = "LAMP=0";
-			document.getElementById("lampStatus").innerHTML = "OFF";			
+			//Turn blending OFF
+			var valStr = "BLEND=0";
+			document.getElementById("blendingStatus").innerHTML = "OFF";			
 		}
 		client.open("POST", "/", true);
 		client.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");

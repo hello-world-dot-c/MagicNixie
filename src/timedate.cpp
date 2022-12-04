@@ -30,9 +30,6 @@ DEFINITIONS AND SETTINGS
 #define USE_RTC 1
 #endif
 
-#define TIME_ZONE_STR  F("de")
-
-#define NTP_SERVER_STR  F("fritz.box") //F("192.168.1.1")
 #define NTP_UPDATE_PERIOD  60 //600 // 10 minutes
 #define NTP_UPDATE_TICKS  (NTP_UPDATE_PERIOD*1000/SYS_TIME_UPD_PERIOD)
 #define NTP_UPDATE_REPEATS  3
