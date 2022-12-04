@@ -35,19 +35,6 @@ LOCAL VARIABLES/CLASSES
 ***************************************************************************/
 byte handleApi = 0; // 1: Received a HTTP POST request via API interface. 
 
-// See the description in the documentation
-byte fadeInterpolation[97] =
-{ 6,  6,  6,  7,  7,  8,  9, 10, 10, 11, //  1
- 12, 13, 13, 14, 15, 16, 17, 19, 20, 22, //  2
- 23, 25, 26, 28, 29, 32, 35, 38, 40, 45, //  3
- 49, 53, 57, 62, 66, 71, 75, 79, 82, 86, //  4
- 89, 91, 93, 95, 97, 98, 99,100,100,100, //  5
- 99, 98, 97, 95, 93, 91, 89, 86, 82, 79, //  6
- 75, 71, 66, 62, 57, 53, 49, 45, 40, 38, //  7
- 35, 32, 29, 28, 26, 25, 23, 22, 20, 19, //  8
- 17, 16, 15, 14, 13, 13, 12, 11, 10, 10, //  9
-  9,  8,  7,  7,  6,  6,  6 };           // 10 (97)
-  
 
 /**************************************************************************
 LOCAL FUNCTIONS
@@ -142,13 +129,6 @@ void handleRoot()
       {  // Request received via API
          server.send ( 200, "text/html", "OK" ); // Return OK
       }
-/*
-      for(uint16_t i = 0; i < strip.numPixels(); i++) 
-      {
-        strip.setPixelColor(i, strip.Color(0, 0, 0) );
-        strip.show();
-      }
-*/
       if( DEBUG ) Serial.println(MODULE"**  New lamp status saved (OFF).");      
     } 
     else 
@@ -439,10 +419,10 @@ void MagicNixieWeb_loadScript ()
          temp += "  document.getElementById(\"blendingStatus\").innerHTML = \"";
          temp += softBlendON;
          temp += "\";\n";
-         temp += "  document.getElementById(\"brightnessSlider\").value = \"";
+         temp += "  document.getElementById(\"ledBrightnessSlider\").value = \"";
          temp += gConf.ledBrightness;
          temp += "\";\n";
-         temp += "  document.getElementById(\"brightnessValue\").innerHTML = \"";
+         temp += "  document.getElementById(\"ledBrightnessValue\").innerHTML = \"";
          temp += gConf.ledBrightness;
          temp += "\";\n";
          temp += "  document.getElementById(\"nixieBrightnessSlider\").value = \"";
@@ -475,7 +455,7 @@ void MagicNixieWeb_loadScript ()
          temp += "  document.getElementById(\"blueValue\").innerHTML = \"";
          temp += gConf.ledBlue;
          temp += "\";\n";
-         temp += "  document.getElementById(\"square\").style.backgroundColor = \"#";
+         temp += "  document.getElementById(\"colorBox\").style.backgroundColor = \"#";
          temp += hexFromRGB(gConf.ledRed, gConf.ledGreen, gConf.ledBlue);
          temp += "\";\n";
          temp += "}, false);\n";

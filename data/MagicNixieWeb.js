@@ -33,7 +33,7 @@ function getRandomColor()
 
 function changeColors() 
 {
-	document.getElementById("square").style.backgroundColor = hexFromRGB( Number(red_slider.value), Number(green_slider.value), Number(blue_slider.value) );
+	document.getElementById("colorBox").style.backgroundColor = hexFromRGB( Number(red_slider.value), Number(green_slider.value), Number(blue_slider.value) );
 }
 
 function mySliderFunction(type, val) 
@@ -44,7 +44,7 @@ function mySliderFunction(type, val)
 		var valStr = "RED=" + red_slider.value + "&GREEN=" + green_slider.value + "&BLUE=" + blue_slider.value;
 		// Must be written like this: "#00FF00"
 		// Must remember to convert to number, otherwise toString (16) will not work.		
-		document.getElementById("square").style.backgroundColor = hexFromRGB( Number(red_slider.value), Number(green_slider.value), Number(blue_slider.value) );		
+		document.getElementById("colorBox").style.backgroundColor = hexFromRGB( Number(red_slider.value), Number(green_slider.value), Number(blue_slider.value) );		
 	}
 	else if( type === 'ledbright' )
 	{
@@ -60,7 +60,7 @@ function mySliderFunction(type, val)
 	}
 	// Must be written like this: "#00FF00"
 	// Must remember to convert to number, otherwise toString (16) will not work.
-  //document.getElementById("square").style.backgroundColor = hexFromRGB( Number(red_slider.value), Number(green_slider.value), Number(blue_slider.value) );
+  //document.getElementById("colorBox").style.backgroundColor = hexFromRGB( Number(red_slider.value), Number(green_slider.value), Number(blue_slider.value) );
 	client.open("POST", "/", true);
 	client.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 	client.send(valStr);

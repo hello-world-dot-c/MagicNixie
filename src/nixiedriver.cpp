@@ -106,6 +106,19 @@ static struct {
 
 static bool selfTest = false;
 
+// Not used yet, attempt at achieving optically a more "linear" fading
+static uint8_t fadeInterpolation[97] =
+{ 6,  6,  6,  7,  7,  8,  9, 10, 10, 11, //  1
+ 12, 13, 13, 14, 15, 16, 17, 19, 20, 22, //  2
+ 23, 25, 26, 28, 29, 32, 35, 38, 40, 45, //  3
+ 49, 53, 57, 62, 66, 71, 75, 79, 82, 86, //  4
+ 89, 91, 93, 95, 97, 98, 99,100,100,100, //  5
+ 99, 98, 97, 95, 93, 91, 89, 86, 82, 79, //  6
+ 75, 71, 66, 62, 57, 53, 49, 45, 40, 38, //  7
+ 35, 32, 29, 28, 26, 25, 23, 22, 20, 19, //  8
+ 17, 16, 15, 14, 13, 13, 12, 11, 10, 10, //  9
+  9,  8,  7,  7,  6,  6,  6 };           // 10 (97)
+  
 
 /**************************************************************************
 LOCAL FUNCTIONS
@@ -382,24 +395,19 @@ void setupNixie() {
   }
 
   // Anti-poisoning values
+  for (int i=0; i<6; i++) {
+    antiPoisoning.digit[i].min =   // never use anti-poisoning by default
+    antiPoisoning.digit[i].max = 0xFF;
+  }
   antiPoisoning.digit[0].min = gConf.use12hDisplay ? 2 : 3;
   antiPoisoning.digit[0].max = 9;
-  antiPoisoning.digit[0].cur = antiPoisoning.digit[0].min;
-  antiPoisoning.digit[1].min = 0xFF; // never use anti-poisoning
-  antiPoisoning.digit[1].max = 0xFF; // never use anti-poisoning
-  antiPoisoning.digit[1].cur = antiPoisoning.digit[1].min;
-  antiPoisoning.digit[2].min = 7;
+  antiPoisoning.digit[2].min = 6;
   antiPoisoning.digit[2].max = 9;
-  antiPoisoning.digit[2].cur = antiPoisoning.digit[2].min;
-  antiPoisoning.digit[3].min = 0xFF; // never use anti-poisoning
-  antiPoisoning.digit[3].max = 0xFF; // never use anti-poisoning
-  antiPoisoning.digit[3].cur = antiPoisoning.digit[3].min;
-  antiPoisoning.digit[4].min = 7;
+  antiPoisoning.digit[4].min = 6;
   antiPoisoning.digit[4].max = 9;
-  antiPoisoning.digit[4].cur = antiPoisoning.digit[4].min;
-  antiPoisoning.digit[5].min = 0xFF; // never use anti-poisoning
-  antiPoisoning.digit[5].max = 0xFF; // never use anti-poisoning
-  antiPoisoning.digit[5].cur = antiPoisoning.digit[5].min;
+  for (int i=0; i<6; i++) {
+    antiPoisoning.digit[i].cur = antiPoisoning.digit[i].min;
+  }
 }
 
 /* EOF */
