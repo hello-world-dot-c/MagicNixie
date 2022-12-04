@@ -84,6 +84,7 @@ typedef struct {
   bool     omitLeading0Hour;  
   bool     useSoftBlend;
   bool     syncRTC;
+  bool     quietNights;
   uint8_t  nixieBrightness;
   uint16_t altDisplayPeriod_s;
   uint16_t altDisplayDuration_ms;  

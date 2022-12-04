@@ -244,6 +244,7 @@ void setup() {
     gConf.omitLeading0Hour = false;
     gConf.useSoftBlend = true;
     gConf.syncRTC = true;
+    gConf.quietNights = true;
     gConf.nixieBrightness = 100;
     gConf.altDisplayPeriod_s = 45;
     gConf.altDisplayDuration_ms = 5000; 
@@ -254,6 +255,7 @@ void setup() {
     gConf.ledGreen = 220; 
     gConf.ledBlue = 60; 
     gConf.ledBrightness = 50;
+    saveConfig();
   }
   
   if (SPIFFS.begin()) {  

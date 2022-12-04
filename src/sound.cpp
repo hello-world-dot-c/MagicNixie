@@ -248,8 +248,15 @@ void taskSoundUpdate() {
   if (t_SoundUpdate.isFirstIteration()) {
     EasyBuzzer.setPin(PIN_BUZZ);
     selfTestCnt = 0;
-    selfTest = true;
-    _PF(MODULE"Self test started\n");
+    selfTest = !gConf.quietNights || 
+      (gConf.quietNights &&
+        ( (myTZ.hour()>=6) && (myTZ.hour()<=22) 
+        )
+      );
+    if (selfTest)
+      _PF(MODULE"Self test started\n");
+    else
+      _PF(MODULE"Night time, self test not started\n");
   }
 
   static const char *sndptr = NULL;

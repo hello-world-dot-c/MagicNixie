@@ -27,7 +27,7 @@ DEFINITIONS AND SETTINGS
 #define USE_NTP 1
 #endif
 #ifndef USE_RTC
-#define USE_RTC 0
+#define USE_RTC 1
 #endif
 
 #define NTP_UPDATE_PERIOD  60 //600 // 10 minutes
