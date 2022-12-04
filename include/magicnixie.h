@@ -25,7 +25,8 @@
 #include <SPI.h>
 #include <Wire.h>
 #include <RTClib.h>
-#include <TimeLib.h>
+//#include <TimeLib.h>
+#include <ezTime.h>
 #include <EEPROM.h>
 #include <WiFiClient.h>
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
@@ -65,3 +66,4 @@ boolean isNumeric(String str);
 
 #endif // _MAGICNIXIE_H_
 /* EOF */
+ 

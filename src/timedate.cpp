@@ -17,13 +17,25 @@
 
 #include "magicnixie.h"
 
+
+/**************************************************************************
+DEFINITIONS AND SETTINGS
+***************************************************************************/
 #define MODULE "*TIM: "
 
+#ifndef USE_NTP
+#define USE_NTP 1
+#endif
+#ifndef USE_RTC
+#define USE_RTC 0
+#endif
+
 #define NTP_UPDATE_TICKS  (60*1000/SYS_TIME_UPD_PERIOD)  // 60 seconds
-#define NTP_SERVER  "192.168.1.1"
-#define NTP_UDP_SEND_PORT 123 // port for NTP requests
-#define NTP_UDP_LISTEN_PORT 8888 // port for NTP responses
+#define NTP_SERVER_STR  "192.168.1.1"
+#define NTP_UDP_REMOTE_PORT 123 // port for NTP requests at the server
+#define NTP_UDP_LISTEN_PORT 8888 // port to listen to for NTP responses
 #define NTP_PACKET_SIZE 48 // NTP time stamp is in the first 48 bytes of the message
+#define SEVENZYYEARS 2208988800UL
 
 // sets how often the main system time update handler is called before
 // the system time is attempted to be updated from the RTC again
@@ -34,17 +46,35 @@
 GLOBAL VARIABLES/CLASSES
 ***************************************************************************/
 
+
 /**************************************************************************
 LOCAL VARIABLES/CLASSES
 ***************************************************************************/
+#if USE_RTC
 RTC_DS3231 RTC;
+#endif
+#if USE_NTP
 AsyncUDP udp;
-byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
+#endif
 static char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
+void Timezone::stopNTPUpdates() {
+  setInterval(); // disable library NTP updates
+}
+Timezone myTZ;
 
 /**************************************************************************
 LOCAL FUNCTIONS
 ***************************************************************************/
+#if USE_RTC
+bool isValidDay(int month)
+{
+  int days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  if (month % 4 == 0) days[1] = 29;
+  if (month > days[month - 1]) return false;
+  else return true;
+}
+
 bool setRTCDateTime(byte h, byte m, byte s, byte d, byte mon, byte y) {
 
   RTC.adjust(DateTime(y, mon, d, h, m, s));
@@ -99,86 +129,72 @@ bool getRTCTime(rtcTime_t *curTime) {
 
   return ret_val;
 }
+#endif // USE_RTC
 
-bool isValidDay(int month)
-{
-  int days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  if (month % 4 == 0) days[1] = 29;
-  if (month > days[month - 1]) return false;
-  else return true;
-}
 
 /**************************************************************************
 PUBLIC FUNCTIONS
 ***************************************************************************/
 void taskSystemTimeUpdate() {
+  static bool ntp_available = false;
   static bool ntp_init = false;
-  static int ntp_update_ticks = NTP_UPDATE_TICKS;
+  static int ntp_update_ticks = 1; // update asap
   static int rtc_update_ticks = RTC_UPDATE_TICKS;
+  static IPAddress ntpServerIP;
   rtcTime_t rtc_time;
 
   if (t_SystemTimeUpdate.isFirstIteration()) {
     _PL(MODULE"System time update task started");
+#if USE_RTC
     Wire.begin(); // Start the I2C
     if (! RTC.begin())  // Init RTC
       _PL(MODULE"Could not find RTC");
     Wire.setClock(50000); // I2C works better at reduced speed
+#endif // USE_RTC
+    myTZ.setLocation(F("de"));
+    myTZ.stopNTPUpdates();
   }
 
-  // As soon as WiFi is available, set up the NTP listener once
+#if USE_NTP
+  // As soon as WiFi is available, set up the NTP listener
   if (!ntp_init) {
     if (WiFi.status() == WL_CONNECTED) {
-      if(udp.listen(NTP_UDP_LISTEN_PORT)) {
-          Serial.print("UDP Listening on IP: ");
-          Serial.println(WiFi.localIP());
-          udp.onPacket([](AsyncUDPPacket packet) {
-              Serial.print("UDP Packet Type: ");
-              Serial.print(packet.isBroadcast()?"Broadcast":packet.isMulticast()?"Multicast":"Unicast");
-              Serial.print(", From: ");
-              Serial.print(packet.remoteIP());
-              Serial.print(":");
-              Serial.print(packet.remotePort());
-              Serial.print(", To: ");
-              Serial.print(packet.localIP());
-              Serial.print(":");
-              Serial.print(packet.localPort());
-              Serial.print(", Length: ");
-              Serial.print(packet.length());
-              Serial.print(", Data: ");
-              Serial.write(packet.data(), packet.length());
-              Serial.println();
-              //reply to the client
-              packet.printf("Got %u bytes of data", packet.length());
-          });
+      if (ntpServerIP.fromString(NTP_SERVER_STR)) {
+        // it is a valid IP address
+        ntp_available = true;
+
+        if(udp.listen(NTP_UDP_LISTEN_PORT)) {
+            Serial.print("UDP Listening on IP: ");
+            Serial.println(WiFi.localIP());
+            udp.onPacket([](AsyncUDPPacket packet) {
+              if (!packet.isBroadcast() && !packet.isMulticast() &&
+                (packet.remoteIP() == ntpServerIP) &&
+                (packet.length() >= NTP_PACKET_SIZE)
+              ) {
+                uint8_t *pdata = packet.data();
+                // this is NTP time (seconds since Jan 1 1900):
+                uint32_t secsSince1900 = ((uint32_t)word(pdata[40], pdata[41])) << 16 | word(pdata[42], pdata[43]);
+                uint32_t currentEpoc = secsSince1900 - SEVENZYYEARS;
+                byte h = hour(currentEpoc);
+                byte m = minute(currentEpoc);
+                byte s = second(currentEpoc);
+                byte d = day(currentEpoc);
+                byte mon = month(currentEpoc);
+                word y = year(currentEpoc);
+//                  bool update_rtc = setRTCDateTime(h, m, s, d, mon, y);
+                _PF(MODULE"NTP Update Time: %02d:%02d:%02d %s, the %02d.%02d.%04d\n", 
+                  h, m, s, daysOfTheWeek[weekday()-1], d, mon, y);
+              }
+            });
+        }
       }
       ntp_init = true;
       _PL(MODULE"NTP initialized since WiFi became available");
     }
   }
-/*
-  // Check NTP handler and when it updated system time, also update the RTC
-  if (!ntp_init) {
-    if (timeClient.forceUpdate()) {
-      byte h = timeClient.getHours();
-      byte m = timeClient.getMinutes();
-      byte s = timeClient.getSeconds();
-      byte d = timeClient.getDay();
-//      byte mon = timeClient. ();
-//      byte y = timeClient();
-        bool update_rtc = setRTCDateTime(h, m, s, d, mon, y);
-        _PF(MODULE"NTP Update Time: %02d:%02d:%02d %s, the %02d.%02d.%04d\n", 
-          h, m, s, daysOfTheWeek[weekday()-1], d, mon, y);
-        if (update_rtc)
-          _PL(MODULE"RTC set update successful");
-        else
-          _PL(MODULE"RTC set update failed!");
-      } else
-      {
-        _PL(MODULE"System time not set!");
-      }
-    }
-  }
-*/
+#endif // USE_NTP
+
+#if USE_RTC
   // Periodically update system time from RTC
   rtc_update_ticks--;
   if (rtc_update_ticks==0) {
@@ -195,13 +211,15 @@ void taskSystemTimeUpdate() {
       rtc_update_ticks = 1;  // try immediately next call until we are successful
     }
   }
+#endif // USE_RTC
 
+#if USE_NTP
   // Periodically update system time from NTP server
-  if (ntp_init) {
+  if (ntp_available && ntp_init) {
     ntp_update_ticks--;
     if (ntp_update_ticks==0) {
+      byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold packet data
       // Initialize values needed to form NTP request
-      // (see URL above for details on the packets)
       memset(packetBuffer, 0, NTP_PACKET_SIZE);
       packetBuffer[0] = 0b11100011;   // LI, Version, Mode
       packetBuffer[1] = 0;     // Stratum, or type of clock
@@ -215,15 +233,17 @@ void taskSystemTimeUpdate() {
 
       // all NTP fields have been given values, now
       // you can send a packet requesting a timestamp:
-      IPAddress ip;
-      if (ip.fromString(NTP_SERVER)) {
-        // it is a valid IP address
-        _PL(MODULE"NTC request sent to "+ip.toString());
-        udp.writeTo(packetBuffer, NTP_PACKET_SIZE, ip, NTP_UDP_SEND_PORT);
+      if (NTP_PACKET_SIZE ==
+        udp.writeTo(packetBuffer, NTP_PACKET_SIZE, ntpServerIP, NTP_UDP_REMOTE_PORT)) {
+        _PL(MODULE"NTC request sent to "+ntpServerIP.toString());
+        ntp_update_ticks = NTP_UPDATE_TICKS;
+      } else {
+        _PL(MODULE"NTC request FAILED to send to "+ntpServerIP.toString());
         ntp_update_ticks = 1;  // try immediately next call until we are successful
       }
     }
   }
+#endif // USE_NTP
 }
 
 
