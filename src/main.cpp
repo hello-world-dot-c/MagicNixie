@@ -23,6 +23,7 @@
 GLOBAL VARIABLES/CLASSES
 ***************************************************************************/
 gConf_t gConf;
+gVars_t gVars;
 
 
 /**************************************************************************
@@ -52,7 +53,7 @@ void keypressWait()
 
 /*---------------------------------------------------------------*/
 /* Checks if a string is numeric.                                */
-/* Removed check for decimal point as it was not needed          */
+/* Allowing negative values, too.                                */
 /* Original code found here:                                     */
 /*     http://tripsintech.com/arduino-isnumeric-function/        */
 /*---------------------------------------------------------------*/
@@ -62,15 +63,24 @@ boolean isNumeric(String str)
  
   if (stringLength == 0) return false;
  
-  for(unsigned int i = 0; i < stringLength; ++i) 
-  {
-     if (isDigit(str.charAt(i))) 
-     {
-       continue;
-     }
-     return false;
-  }
-  return true;
+    boolean seenDecimal = false;
+    unsigned int start = (str.charAt(0) == '-') ? 1 : 0;
+  
+    for(unsigned int i = start; i < stringLength; ++i) {
+        if (isDigit(str.charAt(i))) {
+            continue;
+        }
+ 
+        if (str.charAt(i) == '.') {
+            if (seenDecimal) {
+                return false;
+            }
+            seenDecimal = true;
+            continue;
+        }
+        return false;
+    }
+    return true;
 }
 
 /*--------------------------------------------------------------------*/
@@ -95,7 +105,7 @@ String formatBytes(size_t bytes)  // convert sizes in bytes to KB and MB
   return "";
 }
 
-#define MAX_STR 80
+#define MAX_STR 120
 void logPrintf(String fmt, ...)
 {
   static char outstrln[MAX_STR+1] = { '\0' };
@@ -246,15 +256,16 @@ void setup() {
     gConf.syncRTC = true;
     gConf.quietNights = true;
     gConf.nixieBrightness = 100;
-    gConf.altDisplayPeriod_s = 45;
-    gConf.altDisplayDuration_ms = 5000; 
+    gConf.altDisplayPeriod_s = 55;
+    gConf.altDisplayDuration_ms = 4500; 
     gConf.altFadeSpeed_ms = 800;
     gConf.altFadeDarkPause_ms = 400;
-    gConf.antiPoisoningLevel = 2;
+    gConf.antiPoisoningLevel = 1;
     gConf.ledRed = 30;
     gConf.ledGreen = 220; 
     gConf.ledBlue = 60; 
     gConf.ledBrightness = 50;
+    gConf.tempTimeout_s = 100;
     saveConfig();
   }
   
@@ -279,10 +290,14 @@ void setup() {
     _PF(MODULE"Error mounting file system\n");
   }
   
+  _PF(MODULE"Network variables:\n");
+  nvPrintVars();
+  _PF("\n");
   setupTime();
   setupWifi();
   setupMqtt();
   setupWeb();
+  setupTemp();
   setupTasks();
 }
 

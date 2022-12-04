@@ -249,7 +249,7 @@ void taskSoundUpdate() {
   if (t_SoundUpdate.isFirstIteration()) {
   }
 
-  if (isTimeValid()) {
+  if (gVars.timeValid) {
     if (!ready_to_run) {
       ready_to_run = true;
       EasyBuzzer.setPin(PIN_BUZZ);

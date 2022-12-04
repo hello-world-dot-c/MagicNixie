@@ -75,8 +75,10 @@ String getContentType(String filename)
  *--------------------------------------------------------------------*/
 bool handleFileRead(String path) 
 { 
+  char pathstr[40];
+  path.toCharArray(pathstr, 40);
   // send the right file to the client (if it exists)
-  Serial.println(MODULE"  handleFileRead: " + path); 
+  _PF(MODULE"HandleFileRead: %s\n", pathstr); 
   if (path.endsWith("/")) path = HTMLMainFile;          // If a folder is requested, send the main file
   String contentType = getContentType(path);            // Get the MIME type
   if (SPIFFS.exists(path))                              // If the file exists
@@ -86,286 +88,68 @@ bool handleFileRead(String path)
     file.close();                                       // Then close the file again
     return true;
   }
-  Serial.println(MODULE"\tFile Not Found");
+  _PF(MODULE"\tFile Not Found");
   return false;                                         // If the file doesn't exist, return false
 }
 
 /*---------------------------------------------------------------*/
-/* This function reads the incoming arguments and updates the   */
-/* status of the lamp.                                           */
-/* http://<ip address>/                                          */
+/* This function reads the incoming arguments and updates the    */
+/* network variables.                                            */
 /*---------------------------------------------------------------*/
 void handleRoot() 
 {
-  String str, strText;
+  String str;
+  long strval;
+  bool var_handled = false;
+  const netVars_t *netvars_p;
 
-  if( DEBUG ) Serial.println(MODULE"** HandleRoot called.");    
+  _PF(MODULE"HandleRoot: /\n");    
   
-  if (server.hasArg("BLEND") )
-  {
-    str = server.arg("BLEND");
-    if ( str == "1" ) 
+  nvSetFirstVar();
+  while (nvGetNextVar(&netvars_p)) {
+    if (server.hasArg(netvars_p->name))
     {
-      // Received BLEND=1
-      gConf.useSoftBlend = 1;
-//      EEPROM.write(L_STATUS, 1); // Save new lamp status
-//      EEPROM.commit();           // Needed in order to save content to flash.
-      if( DEBUG ) Serial.println(MODULE"**  BLEND ON.");
-      if( handleApi )
-      {  // Request received via API
-         server.send ( 200, "text/html", "OK" ); // Return OK
+      str = server.arg(netvars_p->name);
+      if (nvSetVarByString(&str)) {
+        _PF(MODULE"%s set to %s.\n", netvars_p->name, &str);
+        if (handleApi) {  // Request received via API
+          server.send(200, "text/html", "OK"); // Return OK
+        } else {
+          handleFileRead(HTMLMainFile); // Update WEB interface
+          _PF(MODULE"html text send.\n");
+        }
+      } else {
+        // Received something wrong.
+        _PF(MODULE"ERROR: %s NOT set to %s.\n", netvars_p->name, &str);
+        if (handleApi) {  // Request received via API
+          server.send(200, "text/html", "ERROR"); // Return OK
+        } else {
+          handleFileRead(HTMLMainFile); // Update WEB interface
+          _PF(MODULE"html text send.\n");
+        }
       }
+      var_handled = true;
+    }
+  }
 
-      if( DEBUG ) Serial.println(MODULE"**  New blending status saved (ON).");
-    } 
-    else if ( str == "0" ) 
-    {
-      // Received BLEND=0
-      gConf.useSoftBlend = 0;
-//      EEPROM.write(L_STATUS, 0); // Save new lamp status
-//      EEPROM.commit();           // Needed in order to save content to flash.
-      if( DEBUG ) Serial.println(MODULE"**  BLEND OFF.");
-      if( handleApi )
-      {  // Request received via API
-         server.send ( 200, "text/html", "OK" ); // Return OK
+  // handle non-variable commands
+  if (!var_handled) {
+    if (server.hasArg("SAVE")) {
+      // Save present configuration in EEPROM.
+      saveConfig();
+      if (handleApi) {  // Request received via API
+        server.send(200, "text/html", "OK"); // Return OK
       }
-      if( DEBUG ) Serial.println(MODULE"**  New lamp status saved (OFF).");      
-    } 
-    else 
-    {
-      // Received something wrong.
-      Serial.println(MODULE"Err Lamp status.");
-      if( handleApi )
-      {  // Request received via API
-         server.send ( 200, "text/html", "ERROR" ); // Return OK
-      }
-    } 
-    if( DEBUG ) Serial.println(MODULE"**  BLEND submit handled.");    
-  }
-  else if( server.hasArg("RED") || server.hasArg("GREEN") || server.hasArg("BLUE") )
-  { 
-    boolean colourError = 0;
-    strText = "COLOUR: ";
-    if( server.hasArg("RED") )
-    {
-      // Received RED=<value>
-      str = server.arg("RED");
-      strText += "RED: ";      
-      if( isNumeric( str ) && (str.toInt() < 256) )
-      {
-        if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
-        gConf.ledRed  = str.toInt();
-        strText += str;
-        if( DEBUG ) 
-        {
-          Serial.print("**  New RED value set: "); Serial.println(gConf.ledRed);
-        }
-      }
-      else
-      {
-        if( DEBUG ) Serial.println(MODULE"**  Data received are NOT numeric");
-        colourError = 1;
-        strText += "N/A ";
-        if( DEBUG ) 
-        {
-          Serial.print("**  Error new RED value: "); Serial.println(str);
-        }
-      }
+      _PF(MODULE"New configuration saved.\n");    
     }
-    if(server.hasArg("GREEN") )
-    {
-      // Received GREEN=<value>
-      str = server.arg("GREEN");
-      strText += " GREEN: ";
-      if( isNumeric( str ) && (str.toInt() < 256) )
-      {
-        if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
-        gConf.ledGreen = str.toInt();
-        strText  += str;
-        if( DEBUG ) 
-        {
-          Serial.print("**  New GREEN value set: "); Serial.println(gConf.ledGreen);
-        }
+    else {
+      if (handleApi) {  // Request received via API
+        _PF(MODULE"ERROR: Request not understood.\n");
+        server.send(200, "text/html", "ERROR"); // Return ERROR
+      } else {
+        handleFileRead(HTMLMainFile); // Update WEB interface
+        _PF(MODULE"html text send.\n");
       }
-      else
-      {
-        if( DEBUG ) Serial.println(MODULE"**  Data received are NOT numeric");
-        colourError = 1;
-        strText += "N/A ";
-        if( DEBUG ) 
-        {
-          Serial.print("**  Error new GREEN value: "); Serial.println(str);
-        }
-      }
-    }
-    if(server.hasArg("BLUE") )
-    {
-      // Received BLUE=<value>
-      str      = server.arg("BLUE");
-      strText += " BLUE: ";
-      if( isNumeric( str ) && (str.toInt() < 256) )
-      {
-        if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
-        gConf.ledBlue = str.toInt();
-        strText += str;
-        if( DEBUG ) 
-        {
-          Serial.print("**  New BLUE value set: "); Serial.println(gConf.ledBlue);
-        }
-      }
-      else
-      {
-        if( DEBUG ) Serial.println(MODULE"**  Data received are NOT numeric");
-        colourError = 1;
-        strText    += "N/A ";
-        if( DEBUG ) 
-        {
-          Serial.print("**  Error new BLUE value: "); Serial.println(str);
-        }
-      }
-    } 
-    if( handleApi )
-    {  // Request received via API
-      if( colourError )
-        server.send ( 200, "text/html", "ERROR" ); // Return ERROR
-      else
-        server.send ( 200, "text/html", "OK" ); // Return OK
-    }
-
-    if( DEBUG ) Serial.println(MODULE"**  COLOUR submit handled.");  
-  }
-  else if(server.hasArg("BRIGHTNESS") )
-  {
-    // Received BRIGHTNESS=<value>
-    str = server.arg("BRIGHTNESS");
-    // Check if received value is numeric AND below 256
-    if( isNumeric( str ) && (str.toInt() < 256) )
-    {
-      if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
-      gConf.ledBrightness = str.toInt();
-      if( handleApi )
-      {
-        server.send ( 200, "text/html", "OK" ); // Return OK  
-      }
-      else
-      {
-        handleFileRead( HTMLMainFile ); // Update WEB interface
-      }
-      if( DEBUG )
-      {
-        Serial.print("**  New BRIGHTNESS value set: "); Serial.println(gConf.ledBrightness);
-      }          
-    }
-    else
-    {
-      if( DEBUG ) Serial.println(MODULE"**  Data received are NOT numeric");
-      if( handleApi )
-      {
-        server.send ( 200, "text/html", "ERROR" ); // Return ERROR  
-      }
-      else
-      {
-        strText += "BRIGHTNESS error Wrong data: ";
-        strText += str;
-        handleFileRead( HTMLMainFile ); // Update WEB interface
-      }
-    }  
-  }
-  else if(server.hasArg("NIXIEBRIGHTNESS") )
-  {
-    // Received NIXIEBRIGHTNESS=<value>
-    str = server.arg("NIXIEBRIGHTNESS");
-    // Check if received value is numeric AND below 256
-    if( isNumeric( str ) && (str.toInt() < 256) )
-    {
-      if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
-      gConf.nixieBrightness = str.toInt();
-      if( handleApi )
-      {
-        server.send ( 200, "text/html", "OK" ); // Return OK  
-      }
-      else
-      {
-        handleFileRead( HTMLMainFile ); // Update WEB interface
-      }
-      if( DEBUG )
-      {
-        Serial.print("**  New NIXIEBRIGHTNESS value set: "); Serial.println(gConf.nixieBrightness);
-      }          
-    }
-    else
-    {
-      if( DEBUG ) Serial.println(MODULE"**  Data received are NOT numeric");
-      if( handleApi )
-      {
-        server.send ( 200, "text/html", "ERROR" ); // Return ERROR  
-      }
-      else
-      {
-        strText += "NIXIEBRIGHTNESS error Wrong data: ";
-        strText += str;
-        handleFileRead( HTMLMainFile ); // Update WEB interface
-      }
-    }  
-  }
-  else if(server.hasArg("ANTIPOISON") )
-  {
-    // Received ANTIPOISON=<value>
-    str = server.arg("ANTIPOISON");
-    // Check if received value is numeric AND below 256
-    if( isNumeric( str ) && (str.toInt() < 256) )
-    {
-      if( DEBUG ) Serial.println(MODULE"**  Data received are numeric");
-      gConf.antiPoisoningLevel = str.toInt();
-      if( handleApi )
-      {
-        server.send ( 200, "text/html", "OK" ); // Return OK  
-      }
-      else
-      {
-        handleFileRead( HTMLMainFile ); // Update WEB interface
-      }
-      if( DEBUG )
-      {
-        Serial.print("**  New ANTIPOISON value set: "); Serial.println(gConf.antiPoisoningLevel);
-      }          
-    }
-    else
-    {
-      if( DEBUG ) Serial.println(MODULE"**  Data received are NOT numeric");
-      if( handleApi )
-      {
-        server.send ( 200, "text/html", "ERROR" ); // Return ERROR  
-      }
-      else
-      {
-        handleFileRead( HTMLMainFile ); // Update WEB interface
-      }
-    }  
-  }
-  else if(server.hasArg("SAVE") )
-  {
-    // Save present configuration in EEPROM.
-    saveConfig();
-    
-    if( handleApi )
-    {  // Request received via API
-       server.send ( 200, "text/html", "OK" ); // Return OK
-    }
-
-    if( DEBUG ) Serial.println(MODULE"**  New configuration saved.");    
-  }
-  else
-  {
-    if( handleApi )
-    {  // Request received via API
-      if( DEBUG ) Serial.println(MODULE"**  ERROR sent.");
-      server.send ( 200, "text/html", "ERROR" ); // Return ERROR
-    }
-    else
-    {
-      handleFileRead( HTMLMainFile ); // Update WEB interface
-      if( DEBUG ) Serial.println(MODULE"**  html text send.");
     }
   }
   handleApi = 0;
@@ -386,82 +170,66 @@ void handleAPI()
 /*--------------------------------------------------------------------*/
 void handleNotFound(void)  // if the requested file or page doesn't exist, return a 404 not found error
 {
-  Serial.println(MODULE"Received request");
-  if (!handleFileRead(server.uri())) // check if the file exists in the flash memory (SPIFFS), if so, send it
+  String uriStr = server.uri();
+  _PF(MODULE"HandleNotFound: %s\n",&uriStr);
+  if (!handleFileRead(uriStr)) // check if the file exists in the flash memory (SPIFFS), if so, send it
   {
     server.send(404, "text/plain", "404: File Not Found");
   }
 }
 
 /*---------------------------------------------------------------*/
-/* Holds the file: "MagicNixieWeb_load.js"                       */
-/* This file includes the EEPROM stored values, which is needed  */
-/*  in order to update the WEB configuration interface after     */
-/*  reset or power up.                                           */
+/* Generates the file: "MagicNixieWeb_load.js"                   */
+/* This file includes the network variables to update the WEB    */
+/* configuration interface.                                      */
 /*---------------------------------------------------------------*/
-void MagicNixieWeb_loadScript ()
+void handleLoadScript()
 {
-  Serial.println(MODULE"Received request");
-  Serial.println(MODULE"  handleFileRead: MagicNixieWeb_load.js");
-  
-  String softBlendON = "OFF";
-  String softBlendChecked = "false";
-  if (gConf.useSoftBlend) 
-  {
-	  softBlendON = "ON";
-	  softBlendChecked = "true";
-  }
+  const netVars_t *netvars_p;
+
+  _PF(MODULE"HandleLoadScript: MagicNixieWeb_load.js\n");
+
   String temp  = "document.addEventListener('DOMContentLoaded', function ()\n";
          temp += "{\n";
-         temp += "  document.getElementById(\"blendingOnOffButton\").checked = \"";
-         temp += softBlendChecked;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"blendingStatus\").innerHTML = \"";
-         temp += softBlendON;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"ledBrightnessSlider\").value = \"";
-         temp += gConf.ledBrightness;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"ledBrightnessValue\").innerHTML = \"";
-         temp += gConf.ledBrightness;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"nixieBrightnessSlider\").value = \"";
-         temp += gConf.nixieBrightness;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"nixieBrightnessValue\").innerHTML = \"";
-         temp += gConf.nixieBrightness;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"antiPoisonSlider\").value = \"";
-         temp += gConf.antiPoisoningLevel;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"antiPoisonValue\").innerHTML = \"";
-         temp += gConf.antiPoisoningLevel;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"redSlider\").value = \"";
-         temp += gConf.ledRed;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"redValue\").innerHTML = \"";
-         temp += gConf.ledRed;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"greenSlider\").value = \"";
-         temp += gConf.ledGreen;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"greenValue\").innerHTML = \"";
-         temp += gConf.ledGreen;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"blueSlider\").value = \"";
-         temp += gConf.ledBlue;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"blueValue\").innerHTML = \"";
-         temp += gConf.ledBlue;
-         temp += "\";\n";
-         temp += "  document.getElementById(\"colorBox\").style.backgroundColor = \"#";
-         temp += hexFromRGB(gConf.ledRed, gConf.ledGreen, gConf.ledBlue);
-         temp += "\";\n";
-         temp += "}, false);\n";
+
+  nvSetFirstVar();
+  while (nvGetNextVar(&netvars_p)) {
+    for (int i=0; i<2; i++) {
+      if (strlen(netvars_p->jsname[i]) >0) {
+        temp += "  document.getElementById(\"";
+        temp += netvars_p->jsname[i];
+        if (netvars_p->type == TYPE_BOOL) {
+          bool rval = *(bool *)(netvars_p->var);
+          temp += "\").checked = \"";
+          temp += (i==0) ? 
+            ((rval) ? "true" : "false") : 
+            ((rval) ? "ON"   : "OFF");
+        } else {
+          temp += (i==0) ? 
+            "\").value = \"" :
+            "\").innerHTML = \"";
+          if (netvars_p->type == TYPE_UINT8) {
+            uint8_t rval = *(uint8_t *)(netvars_p->var);
+            temp += rval;
+          } else if (netvars_p->type == TYPE_UINT16) {
+            uint16_t rval = *(uint16_t *)(netvars_p->var);
+            temp += rval;
+          } else if (netvars_p->type == TYPE_UINT32) {
+            uint32_t rval = *(uint32_t *)(netvars_p->var);
+            temp += rval;
+          }
+        }
+        temp += "\";\n";
+      }
+    }
+  }
+  temp += "  document.getElementById(\"colorBox\").style.backgroundColor = \"#";
+  temp += hexFromRGB(gConf.ledRed, gConf.ledGreen, gConf.ledBlue);
+  temp += "\";\n";
+  temp += "}, false);\n";
 		 
-  server.send ( 200, "application/javascript", temp );
-  Serial.println(MODULE"  MagicNixieWeb_loadScript transmitted.");
+  server.send(200, "application/javascript", temp);
+  _PF(MODULE"  MagicNixieWeb_loadScript transmitted.\n");
 } // String getPage ()
 
 
@@ -480,15 +248,17 @@ void taskWebConnect() {
   {
 	// Associate the handler function to the path.
     server.on("/", handleRoot);        
-	  server.on("/MagicNixieWeb_load.js", MagicNixieWeb_loadScript); 
+	  server.on("/MagicNixieWeb_load.js", handleLoadScript); 
     server.on("/API",handleAPI);       
-    server.onNotFound(handleNotFound); // Any thing else
+    server.onNotFound(handleNotFound); // Anything else
         
     server.begin();
-    Serial.println(MODULE"**  HTTP server started");
+    _PF(MODULE"HTTP server started\n");
     // Print the IP address
-    Serial.print(MODULE"**   Use this URL : "); Serial.print("http://"); Serial.print(WiFi.localIP()); Serial.println("/");
-    Serial.print(MODULE"** HTTP server setup done\n");
+    char chstr[20];
+    WiFi.localIP().toString().toCharArray(chstr,20);
+    _PF(MODULE"Use this URL: http://%s/\n", chstr);
+    _PF(MODULE"HTTP server setup done\n");
     do_connect = false; 
     t_WebRun.enable();
   }

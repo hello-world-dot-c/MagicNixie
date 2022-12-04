@@ -38,14 +38,34 @@ static void receiveMQTTCallback (char* topic, byte* payload, unsigned int length
 #ifdef USE_MQTT_JSON
   StaticJsonDocument<256> doc;
 #endif
-  byte payload_save[100];
-  memcpy(payload_save,payload,length);
-  _PF(MODULE"Message arrived [%s][%d]: [", topic, length);
-  memcpy(payload,payload_save,length);
-  for (unsigned int i=0;i<length;i++) {
-    _PF("%c", (char)payload[i]);
+  char topic_str[100];
+  char payload_str[100];
+  int lencmdtopic = strlen(MQTT_CMD_TOPIC);
+  strncpy(topic_str, topic, 100);
+  strncpy(payload_str, (char *)payload, length);
+  payload_str[length] = '\0';
+  _PF(MODULE"Message arrived [%s]", topic_str);
+  if (length)
+    _PF(" = %s", payload_str);
+  _PF("\n");  
+  // Test if this is a command topic
+  if (strncmp(topic_str, MQTT_CMD_TOPIC, lencmdtopic) == 0) {
+    // The remainder of the topic is the name of the variable which we try to set
+    String varStr = topic_str+lencmdtopic;
+    if (length) {
+      String valStr = payload_str;
+      (void)nvSetThisVarByString(&varStr, &valStr);
+    } else {
+      if (nvGetThisVarAsString(&varStr, payload_str, sizeof(payload_str))) {
+        _PF(MODULE"Get: %s = %s\n", topic_str+lencmdtopic, payload_str);
+        (MQTT_OUT_TOPIC+varStr).toCharArray(topic_str, sizeof(topic_str));
+        mqttClient.publish(topic_str,payload_str);
+        _PF(MODULE"Message published [%s] = %s\n", topic_str, payload_str);
+      } else {
+        _PF(MODULE"ERROR getting %s\n", topic_str+lencmdtopic);
+      }
+    }
   }
-  _PF("]\n");
 #ifdef USE_MQTT_JSON
   DeserializationError error = deserializeJson(doc, payload, length);
   if (error) {
@@ -110,9 +130,7 @@ void taskMqttConnect() {
     if (mqttClient.connect(MQTT_CLIENT)) {
       IP.toString().toCharArray(str,sizeof(str));
       _PF(MODULE"MQTT connection established to server at %s\n", str);
-      // Once connected, publish an announcement...
-      mqttClient.publish(MQTT_OUT_TOPIC,"hello world");
-      // ... and resubscribe
+      // Once connected, subscribe
       _PF(MODULE"MQTT subscribing to ");
       _PF(MQTT_IN_TOPIC"\n");
       mqttClient.subscribe(MQTT_IN_TOPIC);

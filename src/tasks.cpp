@@ -29,6 +29,9 @@ void taskTasksMonitor();
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
 ***************************************************************************/
+// Scheduler
+Scheduler ts;
+
 // Tasks
 Task t_WiFiConnect(5000, TASK_FOREVER, &taskWiFiConnect);
 Task t_MqttConnect(5000, TASK_FOREVER, &taskMqttConnect);
@@ -42,13 +45,12 @@ Task t_LedsUpdate(LED_UPD_PERIOD, TASK_FOREVER, &taskLedsUpdate);
 Task t_SoundUpdate(SOUND_UPD_PERIOD, TASK_FOREVER, &taskSoundUpdate);
 Task t_MqttRun(200, TASK_FOREVER, &taskMqttRun);
 Task t_WebRun(50, TASK_FOREVER, &taskWebRun);
+Task t_TempUpdate(1000, TASK_FOREVER, &taskTempUpdate);
 
 
 /**************************************************************************
 LOCAL VARIABLES/CLASSES
 ***************************************************************************/
-// Scheduler
-static Scheduler ts;
 // Tasks
 Task t_TasksMonitor(CPU_LOAD_UPD_PERIOD, TASK_FOREVER, &taskTasksMonitor);
 
@@ -96,6 +98,7 @@ void setupTasks() {
   addAndRun(&t_NixieSlowUpdate);
   addAndRun(&t_NixieFastUpdate);
   addAndRun(&t_SystemTimeUpdate);
+  addAndRun(&t_TempUpdate);
 //  addAndRun(&t_TimeFastUpdate);
   ts.addTask(t_TimeFastUpdate); // Start only when self test has finished in nixie driver
 //  ts.addTask(t_SystemTimeUpdate);

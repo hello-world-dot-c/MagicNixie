@@ -33,6 +33,9 @@
 // #define _TASK_OO_CALLBACKS      // Support for dynamic callback method binding
 #include <TaskSchedulerDeclarations.h>
 
+// Scheduler
+extern Scheduler ts;
+
 // Tasks
 extern Task t_WiFiConnect;
 extern Task t_MqttConnect;
@@ -46,6 +49,7 @@ extern Task t_TimeFastUpdate;
 extern Task t_SystemTimeUpdate;
 extern Task t_LedsUpdate;
 extern Task t_SoundUpdate;
+extern Task t_TempUpdate;
 
 // Function prototypes
 void setupTasks();

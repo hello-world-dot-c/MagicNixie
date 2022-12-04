@@ -39,7 +39,6 @@ void taskTimeFastUpdate();
 
 // Function prototypes
 void setupTime();
-bool isTimeValid();
 
 #endif // _TIMEDATE_H_
 /* EOF */

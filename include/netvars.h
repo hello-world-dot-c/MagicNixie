@@ -26,6 +26,7 @@ typedef enum {
   TYPE_UINT8,
   TYPE_UINT16,
   TYPE_UINT32,
+  TYPE_FLOAT,
   TYPE_ENDREC
 } dType_t;
 
@@ -43,6 +44,9 @@ bool nvGetNextVar(const netVars_t **net_vars_pp);
 bool nvSetVar(void *dat);
 bool nvSetVarByString(String *Str);
 void nvGetVar(void *dat);
+bool nvSetThisVarByString(String *varStr, String *valStr);
+bool nvGetThisVarAsString(String *varStr, char *val_str, size_t max);
+void nvPrintVars();
 
 #endif // _NETVARS_H_
 /* EOF */

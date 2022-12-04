@@ -54,7 +54,6 @@ static RTC_DS3231 RTC;
 static bool setUpdateRtc = false;
 static gShowContent_t showContent;
 static bool updateTimeAsap = false;
-static bool timeValid = false;
 
 /**************************************************************************
 LOCAL FUNCTIONS
@@ -164,8 +163,8 @@ void taskSystemTimeUpdate() {
   // the last time we checked.
   last_update_time = lastNtpUpdateTime();
   if (last_update_time != last_saved_update_time) {
-    char datetimestr[30];
-    myTZ.dateTime().toCharArray(datetimestr,30);
+    char datetimestr[50];
+    myTZ.dateTime().toCharArray(datetimestr,sizeof(datetimestr));
     _PF(MODULE"NTP update successful, current time: %s\n", datetimestr);
     last_saved_update_time = last_update_time;
     ntp_update_ticks = NTP_UPDATE_TICKS-1-(NTP_UPDATE_REPEATS-ntp_update_repeats);
@@ -175,7 +174,7 @@ void taskSystemTimeUpdate() {
     rtc_available = false;
     setUpdateRtc = true;
     randomSeed((unsigned long)myTZ.ms());
-    timeValid = true;
+    gVars.timeValid = true;
   }
 
   // Periodically update system time from NTP server if we are online
@@ -249,41 +248,153 @@ void taskTimeUpdate() {
   static uint32_t stageCtr;
   static uint32_t stageNext;
   static uint8_t stage;
+  static bool flashing = false;
+  static uint32_t flashCtr;
   if (t_TimeUpdate.isFirstIteration()) {
     showContent = SHOW_TIME;
     stageCtr = 0;
-    stageNext = 1000*gConf.altDisplayPeriod_s / TIME_UPD_PERIOD;
+    stageNext = 1000ul*gConf.altDisplayPeriod_s / TIME_UPD_PERIOD;
     stage = 0;
+  }
+
+  // Invalidate stale temperatures after timeout
+  for (int i=0; i<2; i++) {
+    if (gVars.tempValid[i]) {
+      if (gVars.tempTimeout_ms[i] >= TIME_UPD_PERIOD) {
+        gVars.tempTimeout_ms[i] -= TIME_UPD_PERIOD;
+      } else {
+        gVars.tempValid[i] = false;
+        _PF(MODULE"Temperature %d went stale, no longer valid.\n", i);
+      }
+    }
+  }
+
+  // stage 3: Only handle flashing for negative temperatures here
+  if ((stage == 3) && flashing) {
+    flashCtr++;
+    if (flashCtr==40)
+      nixieFade(false, 200, 0);
+    if (flashCtr==50) {
+      nixieFade(true, 100, 0);
+      flashCtr = 0;
+    }
   }
 
   stageCtr++;
   if (stageCtr >= stageNext) {
+
+    // stage 0: Starting the fading out and getting ready for alt. display
     if (stage == 0) {
       nixieFade(false, gConf.altFadeSpeed_ms, gConf.altFadeDarkPause_ms);
+      showContent = SHOW_DATE;
       stage = 1;
+
+    // stage 3: Starting the fading out from alt. display and getting ready for regular or next alt. display
     } else if (stage == 3) {
+      flashing = false;
       nixieFade(false, gConf.altFadeSpeed_ms, gConf.altFadeDarkPause_ms);
-      stage = 4;
+      if (showContent == SHOW_DATE) {
+        if (gVars.tempValid[0]) {
+          showContent = SHOW_TEMP0;
+          stage = 1;
+        } else if (gVars.tempValid[1]) {
+          showContent = SHOW_TEMP1;
+          stage = 1;
+        } else if (gVars.tempValid[2]) {
+          showContent = SHOW_TEMP2;
+          stage = 1;
+        } else {
+          stage = 4;
+        }
+      } else if (showContent == SHOW_TEMP0) {
+        if (gVars.tempValid[1]) {
+          showContent = SHOW_TEMP1;
+          stage = 1;
+        } else if (gVars.tempValid[2]) {
+          showContent = SHOW_TEMP2;
+          stage = 1;
+        } else {
+          stage = 4;
+        }
+      } else if (showContent == SHOW_TEMP1) {
+        if (gVars.tempValid[2]) {
+          showContent = SHOW_TEMP2;
+          stage = 1;
+        } else {
+          stage = 4;
+        }
+      } else if (showContent == SHOW_TEMP2) {
+        stage = 4;
+      } else {
+        stage = 4;
+      }
     }
   }
+
   if (nixieFadeFinished()) {
+  
+    // stage 1: Fading out from time or alt. display finished, showing date or next alt. display and start fading in
     if (stage==1) {
-      showContent = SHOW_DATE;
       char str[10];
-      sprintf(str, "%2d.%2d.%02d", myTZ.day(), myTZ.month(), myTZ.year() % 100 );
-      _PF(MODULE"Showing date: %s\n", str);
+
+      switch (showContent) {
+        case SHOW_TIME:
+          break;
+        case SHOW_DATE:
+          sprintf(str, "%2d.%2d.%02d", myTZ.day(), myTZ.month(), myTZ.year() % 100 );
+          strncpy(gVars.dateStr,str,sizeof(gVars.dateStr));
+          _PF(MODULE"Showing date: %s\n", str);
+          break;
+        case SHOW_TEMP0: {
+          float abstemp = fabsf(gVars.temp[0]);
+          uint8_t deg = int(abstemp+.05);
+          uint8_t tenths = int(10*(abstemp+.05-deg));
+          flashing = (gVars.temp[0] < 0);
+          sprintf(str, "%2d.%1d '%2d", deg, tenths, 0);
+          _PF(MODULE"Showing temperature 0: %2.1f, \"%s\"\n", gVars.temp[0], str);
+          }
+          break;
+        case SHOW_TEMP1: {
+          float abstemp = fabsf(gVars.temp[1]);
+          uint8_t deg = int(abstemp+.05);
+          uint8_t tenths = int(10*(abstemp+.05-deg));
+          flashing = (gVars.temp[1] < 0);
+          sprintf(str, "%2d.%1d '%2d", deg, tenths, 1);
+          _PF(MODULE"Showing temperature 1: %2.1f, \"%s\"\n", gVars.temp[1], str);
+          }
+          break;
+        case SHOW_TEMP2: {
+          float abstemp = fabsf(gVars.temp[2]);
+          uint8_t deg = int(abstemp+.05);
+          uint8_t tenths = int(10*(abstemp+.05-deg));
+          flashing = (gVars.temp[2] < 0);
+          sprintf(str, "%2d.%1d '%2d", deg, tenths, 2);
+          _PF(MODULE"Showing temperature 2: %2.1f, \"%s\"\n", gVars.temp[2], str);
+          }
+          break;
+        default:
+          break;
+      }
       nixiePrint(0, str, 0);
       nixieFade(true, gConf.altFadeSpeed_ms, 0);
+      flashCtr = 0;
       stage = 2;
+  
+    // stage 2: Fading in with alt. display finished, start waiting for next phase
     } else if (stage==2) {
       stageCtr = 0;
       stageNext = gConf.altDisplayDuration_ms / TIME_UPD_PERIOD;
       stage = 3;
+
+    // stage 4: Fading out from alt. display finished, showing time display and start fading in
     } else if (stage==4) {
+      _PF(MODULE"Alt. display finished, showing time again\n");
       showContent = SHOW_TIME;
-      nixieFade(true, gConf.altFadeSpeed_ms, 0);
       updateTimeAsap = true;
       stage = 5;
+      nixieFade(true, gConf.altFadeSpeed_ms, 0);
+
+    // stage 5: Fading in with time display finished, start waiting for next phase
     } else if (stage==5) {
       stageCtr = 0;
       stageNext = 1000*gConf.altDisplayPeriod_s / TIME_UPD_PERIOD;
@@ -325,9 +436,11 @@ void taskTimeFastUpdate() {
       nixiePrint(0, timeStr, 2);
       sprintf(timeStr, "**%c**%c*%1d", separation_char, separation_char, singles);
       nixiePrint(0, timeStr, 1);
+      strncpy(gVars.timeStr,timeStr,sizeof(gVars.timeStr));
     } else {
       sprintf(timeStr+2, "%c%02d%c%02d", separation_char, myTZ.minute(), separation_char, myTZ.second());
       nixiePrint(0, timeStr, 0);
+      strncpy(gVars.timeStr,timeStr,sizeof(gVars.timeStr));
     }
     updateTimeAsap = false;
 
@@ -338,18 +451,13 @@ void taskTimeFastUpdate() {
         myTZ.dateTime().toCharArray(dtstr,sizeof(dtstr));
         _PF(MODULE"RTC updated, time: %s\n", dtstr); 
         setUpdateRtc = false;
-        timeValid = true;
+        gVars.timeValid = true;
       } else {
         _PF(MODULE"RTC not updated, FAILED\n"); 
       }
     }
 #endif // USE_RTC
   }
-}
-
-
-bool isTimeValid() {
-  return timeValid;
 }
 
 

@@ -34,9 +34,13 @@
 #define MQTT_SERVER_PORT 1883
 #define MQTT_CLIENT "nixie-clock"
 #define MQTT_MYNAME "magicnixie"
-#define MQTT_OUT_TOPIC "tele/" MQTT_MYNAME "/STATE"
-#define MQTT_LOG_TOPIC "tele/" MQTT_MYNAME "/LOG"
-#define MQTT_IN_TOPIC "cmnd/" MQTT_MYNAME "/#"
+#define MQTT_OUT_TOPIC "tele/" MQTT_MYNAME "/"
+#define MQTT_LOG_TOPIC MQTT_OUT_TOPIC "LOG"
+#define MQTT_CMD_TOPIC "cmnd/" MQTT_MYNAME "/"
+#define MQTT_IN_TOPIC MQTT_CMD_TOPIC "#"
+
+// Number of temperature sensors (up to 3)
+#define NUM_TEMP_SENSORS  3
 
 // Debug and Test options
 #define _DEBUG_
@@ -46,6 +50,7 @@
 #define PIN_PWM1  2  // serial LED signal in v3 hardware
 #define PIN_SHDN  0  // shutdown signal for nixie driver
 #define PIN_BUZZ 16  // buzzer signal
+#define PIN_TMP  12  // temperature sensor (not using it as SPI/MISO)
 // the pins for SPI and I2C are fixed
 
 #endif // _CONFIG_H_

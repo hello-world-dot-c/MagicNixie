@@ -34,7 +34,9 @@
 #include <PubSubClient.h>         //https://github.com/knolleary/pubsubclient
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
-#include "EasyBuzzer.h"
+#include <EasyBuzzer.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 // Application includes
 #include "config.h"
@@ -47,6 +49,8 @@
 #include "leds.h"
 #include "tone.h"
 #include "sound.h"
+#include "netvars.h"
+#include "temp.h"
 
 // Debug output macros
 #ifdef _DEBUG_
@@ -68,13 +72,14 @@ DEFINITIONS AND SETTINGS
 
 // EEPROM locations
 #define NVOL_SIZE 4096
-#define NVOL_START_SETTINGS 0
-#define NVOL_START_TZ  (NVOL_START_SETTINGS+40)  // length is EEPROM_CACHE_LEN
+#define NVOL_START_SETTINGS 0 // the first section holds the configuration structure+CRC8
+#define NVOL_START_TZ  (NVOL_START_SETTINGS+sizeof(gConf_t)+1) // length is EEPROM_CACHE_LEN
 
 
 typedef enum {
   SHOW_TIME,
   SHOW_DATE,
+  SHOW_TEMP0,
   SHOW_TEMP1,
   SHOW_TEMP2
 } gShowContent_t;
@@ -95,9 +100,21 @@ typedef struct {
   uint8_t  ledGreen; 
   uint8_t  ledBlue; 
   uint8_t  ledBrightness;
+  uint16_t tempTimeout_s;
 } gConf_t;
 
 extern gConf_t gConf;
+
+typedef struct {
+  bool     timeValid;
+  char     timeStr[10];  
+  char     dateStr[10];
+  bool     tempValid[NUM_TEMP_SENSORS];
+  uint32_t tempTimeout_ms[NUM_TEMP_SENSORS];
+  float    temp[NUM_TEMP_SENSORS];
+} gVars_t;
+
+extern gVars_t gVars;
 
 
 /**************************************************************************
