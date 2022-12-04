@@ -40,6 +40,7 @@ extern Task t_MqttRun;
 extern Task t_WebConnect;
 extern Task t_WebRun;
 extern Task t_NixieUpdate;
+extern Task t_TimeUpdate;
 extern Task t_LedsUpdate;
 
 // Function prototypes

@@ -21,6 +21,10 @@
 #include <Arduino.h>
 #include <user_interface.h>
 #include <FS.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <TimeLib.h>
+#include <RTClib.h>
 #include <EEPROM.h>
 #include <WiFiClient.h>
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
@@ -33,11 +37,13 @@
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
+
 #include "config.h"
 #include "tasks.h"
 #include "wifi.h"
 #include "mqtt.h"
 #include "web.h"
+#include "timedate.h"
 #include "nixiedriver.h"
 #include "leds.h"
 

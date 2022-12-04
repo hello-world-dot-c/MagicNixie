@@ -26,7 +26,7 @@ const int LEDsDelay=40;
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
 ***************************************************************************/
-Adafruit_NeoPixel Leds;
+Adafruit_NeoPixel Leds = Adafruit_NeoPixel(NUMPIXELS, PIN_PWM1, NEO_GRB + NEO_KHZ800);
 
 
 /**************************************************************************
@@ -50,10 +50,9 @@ void taskLedsUpdate() {
 
 
 void setupLeds() {
-  Leds = Adafruit_NeoPixel(NUMPIXELS, PIN_PWM1, NEO_GRB + NEO_KHZ800);
   Leds.begin(); // This initializes the NeoPixel library.
   Leds.setBrightness(50);
-
+  turnLedsOff();
   _PL("LEDs Initialized");
 }
 

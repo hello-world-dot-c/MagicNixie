@@ -20,30 +20,21 @@
 #define MODULE "*ND: "
 
 /*
-  The bits in the 64-bit shift register are allocated to the display function
-  as follows:
-  Bits   Function
-   0- 9  Hours tens 0-9
-  10-19  Hours singles 0-9
-  20-29  Minutes tens 0-9
-  30-31  Column left lower/upper
-  32-41  Minutes singles 0-9
-  42-51  Seconds tens 0-9
-  52-61  Seconds singles 0-9
-  62-63  Column right lower/upper
+The relationship of digits to the bits in the shift data is a hot mess
+with no rhyme nor reason. Therefore, just using a table seems
+appropriate.
  */
-static const uint8_t  startBits[] = {0, 10, 30, 20, 32, 62, 42, 52};
-static const uint64_t maskBits[] = {
-  0xFFFFFFFFFFFFFC00ULL,
-  0xFFFFFFFFFFF003FFULL,
-  0xFFFFFFFF3FFFFFFFULL,
-  0xFFFFFFFFC00FFFFFULL,
-  0xFFFFFC00FFFFFFFFULL,
-  0x3FFFFFFFFFFFFFFFULL,
-  0xFFF003FFFFFFFFFFULL,
-  0xC00FFFFFFFFFFFFFULL
+static const uint8_t digitBitNum[7][10] = {
+  { 57, 41, 25,  9, 58, 42, 26, 10, 59, 43 }, /* hours tens 0-9 */
+  { 27, 11, 60, 44, 28, 12, 61, 45, 29, 13 }, /* hours singles 0-9 */
+  { 62, 46, 30, 14, 63, 47, 31, 15, 64, 48 }, /* minutes tens 0-9 */
+  { 49, 33, 17,  1, 50, 34, 18,  2, 51, 35 }, /* minutes singles 0-9 */
+  { 19,  3, 52, 36, 20,  4, 53, 37, 21,  5 }, /* seconds tens 0-9 */
+  { 54, 38, 22,  6, 55, 39, 23,  7, 56, 40 }, /* seconds singles 0-9 */
+  { 32, 16, 24,  8,  0,  0,  0,  0,  0,  0 }  /* columns: lower left, upper left, lower right, upper right */
 };
 
+static uint64_t digitMask[8];  // is filled on startup
 
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
@@ -71,16 +62,20 @@ PUBLIC FUNCTIONS
 void taskNixieUpdate() {
   if (t_NixieUpdate.isFirstIteration()) {
   }
+  static uint64_t dmem_save;
 
   // Update complete shift register, then latch to outputs
+  dmem_save = displayMem.lword;  // transfer function destroys the data, so save it here
   SPI.transfer(&displayMem, sizeof(displayMem));
+  displayMem.lword = dmem_save;
   digitalWrite(PIN_LE, HIGH);
   digitalWrite(PIN_LE, LOW);
+  digitalWrite(PIN_SHDN, HIGH); //HIGH = ON 
 }
 
 
 void nixiePrint(int Pos, String Str) {
-  int i, len;
+  int i, len, digitpos;
   char ch;
   char str[10];
 
@@ -94,26 +89,35 @@ void nixiePrint(int Pos, String Str) {
     len = 8-Pos;
   }
   for (i=Pos; i<Pos+len; i++) {
-    displayMem.lword &= maskBits[i];
+    if ((i == 2) || (i == 5)) {
+      digitpos = 6;
+    } else if (i>5) {
+      digitpos = i-2;
+    } else if (i>2) {
+      digitpos = i-1;
+    } else {
+      digitpos = i;
+    }
     ch = str[i-Pos];
-    if ((i != 2) && (i != 5)) {
+    if (digitpos != 6) {
+      displayMem.lword &= digitMask[digitpos];
       // position has a digit
       if ((ch >= '0') && (ch <= '9')) {
         uint8_t digit = ch-'0';
-        displayMem.lword |= (1ULL << (startBits[i] + digit));
+        displayMem.lword |= (1ULL << (digitBitNum[digitpos][digit] -1));
       }
     }
     else {
+      displayMem.lword &= digitMask[6 + ((i==5)?1:0)];
       uint64_t bitmask = 0ULL;
       // position has a column character
-      if (ch == ':') {
-        bitmask = 3ULL; // both bits set
-      } else if (ch == '.') {
-        bitmask = 1ULL; // lower bit set
-      } else if (ch == '\'') {
-        bitmask = 2ULL; // upper bit set
+      if ((ch == ':') || (ch == '.')) { // lower or both dots
+        bitmask |= (1ULL << (digitBitNum[digitpos][((i==5)?2:0)] -1));
       }
-      displayMem.lword |= (bitmask << (startBits[i]));
+      if ((ch == ':') || (ch == '\'')) { // upper or both dots
+        bitmask |= (1ULL << (digitBitNum[digitpos][1+((i==5)?2:0)] -1));
+      }
+      displayMem.lword |= bitmask;
     }
   }
   _PF(MODULE"Printed: %s\n", str);
@@ -121,10 +125,31 @@ void nixiePrint(int Pos, String Str) {
 }
 
 void setupNixie() {
+  int i, j;
+
   displayMem.lword = 0ULL;
+  for (i=0; i<6; i++)
+  {
+    digitMask[i] = (uint64_t)-1;  // all bits to 1
+    for (j=0; j<10; j++)
+    {
+      if (digitBitNum[i][j] > 0)
+      {
+        digitMask[i] &= ~(1ULL << (digitBitNum[i][j]-1));
+      }
+    }
+    _PF(MODULE"Mask %d: 0x%016llX\n", i, digitMask[i]);
+  }
+  for (i=0; i<2; i++)
+  {
+    digitMask[6+i] = (uint64_t)-1;  // all bits to 1
+    digitMask[6+i] &= ~(1ULL << (digitBitNum[6][0+2*i]-1));
+    digitMask[6+i] &= ~(1ULL << (digitBitNum[6][1+2*i]-1));
+    _PF(MODULE"Mask %d: 0x%016llX\n", 6+i, digitMask[6+i]);
+  }
   pinMode(PIN_LE, OUTPUT);
   pinMode(PIN_SHDN, OUTPUT);
-  digitalWrite(PIN_SHDN, HIGH); //HIGH = ON 
+  digitalWrite(PIN_SHDN, LOW); //HIGH = ON 
 
   SPI.begin();
   SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));

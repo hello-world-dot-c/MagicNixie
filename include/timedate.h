@@ -15,18 +15,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _RTC_H_
-#define _RTC_H_
+#ifndef _TIMEDATE_H_
+#define _TIMEDATE_H_
 
 #include "magicnixie.h"
 
 
 // Task callback methods prototypes
-extern void taskUpdateTime();
+extern void taskTimeUpdate();
 
 // Function prototypes
 void setupTime();
 void loopTime();
 
-#endif // _RTC_H_
+#endif // _TIMEDATE_H_
 /* EOF */

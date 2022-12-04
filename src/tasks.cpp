@@ -28,6 +28,7 @@ Task t_WiFiConnect(5000, TASK_FOREVER, &taskWiFiConnect);
 Task t_MqttConnect(5000, TASK_FOREVER, &taskMqttConnect);
 Task t_WebConnect(5000, TASK_FOREVER, &taskWebConnect);
 Task t_NixieUpdate(1000, TASK_FOREVER, &taskNixieUpdate);
+Task t_TimeUpdate(10000, TASK_FOREVER, &taskTimeUpdate);
 Task t_LedsUpdate(1000, TASK_FOREVER, &taskLedsUpdate);
 Task t_MqttRun(200, TASK_FOREVER, &taskMqttRun);
 Task t_WebRun(50, TASK_FOREVER, &taskWebRun);

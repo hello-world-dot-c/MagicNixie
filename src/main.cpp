@@ -108,10 +108,11 @@ void setup() {
     _PL(MODULE"Error mounting file system");
   }
   
+  setupNixie();
+  setupLeds();
   setupWifi();
   setupMqtt();
   setupWeb();
-  setupNixie();
   setupTasks();
 
   nixiePrint(0, "01:23'45");
