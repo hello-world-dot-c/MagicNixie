@@ -56,10 +56,28 @@
 #define _PL(a)
 #endif
 
+/**************************************************************************
+DEFINITIONS AND SETTINGS
+***************************************************************************/
 #define MAGICNIXIE_VERSION "\n\nThis is MagicNixie ver: 2020-10-23 v0.1\n\n" 
 #define SYS_TIME_UPD_PERIOD 600  // main system time update handler is executed every 600 ms
+#define NIXIE_UPD_PERIOD 1  // Nixies updated every 5 ms (200/s)
+#define LED_UPD_PERIOD 100  // LEDs updated every 100 ms
 
+typedef struct {
+  bool use12hDisplay;
+  bool useSoftBlend;  
+ } gConf_t;
+
+extern gConf_t gConf;
+
+
+/**************************************************************************
+PUBLIC FUNCTIONS
+***************************************************************************/
+void keypressWait();
 boolean isNumeric(String str);
+String formatBytes(size_t bytes);
 
 
 #endif // _MAGICNIXIE_H_

@@ -17,8 +17,41 @@
 
 #include "magicnixie.h"
 
+/**************************************************************************
+DEFINITIONS AND SETTINGS
+***************************************************************************/
 #define MODULE "*ND: "
 
+// Definitions for blending parameters
+#define NIXIE_BLENDS 2
+
+#define NIXIE_BLEND_TICKS_PER_SLICE 1
+
+#define NIXIE_BLEND1_SPEED 144 // 144 ms for blending to the next
+#define NIXIE_BLEND1_PHASES 12
+#define NIXIE_BLEND1_SLICES 12  // number of slices per phase
+#define NIXIE_BLEND1_SLICES_SHIFT 1  // number of slices shift per phase
+#define NIXIE_BLEND1_TIME (NIXIE_UPD_PERIOD*NIXIE_BLEND_TICKS_PER_SLICE*NIXIE_BLEND1_PHASES*NIXIE_BLEND1_SLICES)
+#if  NIXIE_BLEND1_TIME != NIXIE_BLEND1_SPEED
+#error Cannot do the blend with the given settings
+#endif
+#define NIXIE_BLEND2_SPEED 484 // 484 ms for blending to the next
+#define NIXIE_BLEND2_PHASES 22
+#define NIXIE_BLEND2_SLICES 22  // number of slices per phase
+#define NIXIE_BLEND2_SLICES_SHIFT 1  // number of slices shift per phase
+#define NIXIE_BLEND2_TIME (NIXIE_UPD_PERIOD*NIXIE_BLEND_TICKS_PER_SLICE*NIXIE_BLEND2_PHASES*NIXIE_BLEND2_SLICES)
+#if  NIXIE_BLEND2_TIME != NIXIE_BLEND2_SPEED
+#error Cannot do the blend with the given settings
+#endif
+
+/**************************************************************************
+GLOBAL VARIABLES/CLASSES
+***************************************************************************/
+
+
+/**************************************************************************
+LOCAL VARIABLES/CLASSES
+***************************************************************************/
 /*
 The relationship of digits to the bits in the shift data is a hot mess
 with no rhyme nor reason. Therefore, just using a table seems
@@ -36,20 +69,16 @@ static const uint8_t digitBitNum[7][10] = {
 
 static uint64_t digitMask[8];  // masks to turn off bits for digit - filled on startup
 
-
-/**************************************************************************
-GLOBAL VARIABLES/CLASSES
-***************************************************************************/
-
-
-/**************************************************************************
-LOCAL VARIABLES/CLASSES
-***************************************************************************/
 static char displayStr[] = "00:00:00"; // Content of this string will be displayed on tubes
-static union {
-  uint8_t  bytes[8];
+static struct {
   uint64_t lword;
-} displayMem;
+  uint64_t mask;
+  uint16_t blend_ctr;
+  bool     blend_active;
+  uint16_t blend_slices;
+  uint16_t blend_slices_shift;
+  uint16_t blend_phases; 
+} displayMem[NIXIE_BLENDS+1];
 
 
 /**************************************************************************
@@ -63,24 +92,48 @@ PUBLIC FUNCTIONS
 void taskNixieUpdate() {
   if (t_NixieUpdate.isFirstIteration()) {
   }
-  static uint64_t dmem_save;
+  static uint64_t dmem_out;
+  static uint8_t blend_ticks = 1;
+  uint8_t num_phase;
+  uint8_t slice_in_phase;
+
+  // Always start with the last output value (channel 0)
+  dmem_out = displayMem[0].lword;
+  blend_ticks--;
+  if (blend_ticks==0) {
+    blend_ticks = NIXIE_BLEND_TICKS_PER_SLICE;
+    // Blending algorithm: Apply all blending channels to the output data
+    for (int i=1; i<NIXIE_BLENDS+1; i++) {
+      if (displayMem[i].blend_active) {
+        num_phase = displayMem[i].blend_ctr / displayMem[i].blend_slices;
+        slice_in_phase = displayMem[i].blend_ctr % displayMem[i].blend_slices;
+        if (slice_in_phase >= (displayMem[i].blend_slices-displayMem[i].blend_slices_shift*num_phase)) {
+          dmem_out &= ~displayMem[i].mask;
+          dmem_out |= (displayMem[i].lword & displayMem[i].mask);
+        }
+        displayMem[i].blend_ctr++;
+        if (displayMem[i].blend_ctr==displayMem[i].blend_phases*displayMem[i].blend_slices) {
+          displayMem[0].lword = dmem_out;  // copy new to old
+          displayMem[i].blend_active = false; // end blending for this channel
+        }
+      }
+    }
+  }
 
   // Update complete shift register, then latch to outputs
-  dmem_save = displayMem.lword;  // transfer function destroys the data, so save it here
-  SPI.transfer(&displayMem, sizeof(displayMem));
-  displayMem.lword = dmem_save;
+  SPI.transfer(&dmem_out, sizeof(dmem_out));
   digitalWrite(PIN_LE, HIGH);
   digitalWrite(PIN_LE, LOW);
-  digitalWrite(PIN_SHDN, HIGH); //HIGH = ON 
+  digitalWrite(PIN_SHDN, HIGH); // Turn on nixie driver
 }
 
 
-void nixiePrint(int Pos, char *Str) {
+void nixiePrint(int Pos, char *Str, uint8_t blending) {
   int i, len, digitpos;
   char ch;
   char str[10];
 
-  if (Pos>8) {
+  if ((Pos>8) || (blending>NIXIE_BLENDS)) {
     return;
   }
 
@@ -89,6 +142,7 @@ void nixiePrint(int Pos, char *Str) {
   if (Pos+len > 8) {
     len = 8-Pos;
   }
+  displayMem[blending].mask = 0ULL; // all bits 0
   for (i=Pos; i<Pos+len; i++) {
     if ((i == 2) || (i == 5)) {
       digitpos = 6;
@@ -101,54 +155,78 @@ void nixiePrint(int Pos, char *Str) {
     }
     ch = str[i-Pos];
     if (digitpos != 6) {
-      displayMem.lword &= digitMask[digitpos];
+      displayMem[blending].lword &= digitMask[digitpos];
       // position has a digit
       if ((ch >= '0') && (ch <= '9')) {
         uint8_t digit = ch-'0';
-        displayMem.lword |= (1ULL << (digitBitNum[digitpos][digit] -1));
+        displayMem[blending].mask |= ~digitMask[digitpos]; // set relevant bits to 1
+        displayMem[blending].lword |= (1ULL << (digitBitNum[digitpos][digit] -1));
       }
-    }
-    else {
-      displayMem.lword &= digitMask[6 + ((i==5)?1:0)];
-      uint64_t bitmask = 0ULL;
+    } else {
+      bool set = false;
+      uint64_t bitmask_set = 0ULL;
+      uint8_t index = (i==5) ? 2 : 0;
+      uint64_t bitmask_clear = digitMask[6 + ((i==5)?1:0)];
+      displayMem[blending].lword &= bitmask_clear;
       // position has a column character
       if ((ch == ':') || (ch == '.')) { // lower or both dots
-        bitmask |= (1ULL << (digitBitNum[digitpos][((i==5)?2:0)] -1));
+        bitmask_set |= (1ULL << (digitBitNum[digitpos][index] -1));
+        set = true;
       }
       if ((ch == ':') || (ch == '\'')) { // upper or both dots
-        bitmask |= (1ULL << (digitBitNum[digitpos][1+((i==5)?2:0)] -1));
+        bitmask_set |= (1ULL << (digitBitNum[digitpos][index+1] -1));
+        set = true;
       }
-      displayMem.lword |= bitmask;
+      if (ch == ' ') { // space clears the position
+        set = true;
+      }
+      if (set) {
+        displayMem[blending].mask |= ~bitmask_clear;
+        displayMem[blending].lword |= bitmask_set;
+      }
     }
   }
-//  _PF(MODULE"Printed to Nixies: %s\n", str);
-//  _PF(MODULE"Display mem: 0x%016llX\n", displayMem.lword);
+  // Start blending if printed to channels >0
+  if (blending > 0) {
+    displayMem[blending].blend_ctr = 0;
+    displayMem[blending].blend_active = true;
+  }
 }
 
 void setupNixie() {
-  int i, j;
-
+  // Set up SPI transmission and turn off all digits
   pinMode(PIN_LE, OUTPUT);
   pinMode(PIN_SHDN, OUTPUT);
   digitalWrite(PIN_SHDN, LOW); // HIGH = ON 
-
   SPI.begin();
   SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE3));
 
-  displayMem.lword = 0ULL;
-  for (i=0; i<6; i++)
-  {
+  memset(displayMem, 0, sizeof(displayMem));
+  // Set up blend parameters
+#if NIXIE_BLENDS>=1
+  displayMem[1].blend_phases = NIXIE_BLEND1_PHASES;
+  displayMem[1].blend_slices = NIXIE_BLEND1_SLICES;
+  displayMem[1].blend_slices_shift = NIXIE_BLEND1_SLICES_SHIFT;
+#endif
+#if NIXIE_BLENDS>=2
+  displayMem[2].blend_phases = NIXIE_BLEND2_PHASES;
+  displayMem[2].blend_slices = NIXIE_BLEND2_SLICES;
+  displayMem[2].blend_slices_shift = NIXIE_BLEND2_SLICES_SHIFT;
+#endif
+#if NIXIE_BLENDS>=3
+#error No initialization for blending pattern
+#endif
+
+  // Set up the mask values to clear full digits 
+  for (int i=0; i<6; i++) {
     digitMask[i] = (uint64_t)-1;  // all bits to 1
-    for (j=0; j<10; j++)
-    {
-      if (digitBitNum[i][j] > 0)
-      {
+    for (int j=0; j<10; j++) {
+      if (digitBitNum[i][j] > 0) {
         digitMask[i] &= ~(1ULL << (digitBitNum[i][j]-1));
       }
     }
   }
-  for (i=0; i<2; i++)
-  {
+  for (int i=0; i<2; i++) {
     digitMask[6+i] = (uint64_t)-1;  // all bits to 1
     digitMask[6+i] &= ~(1ULL << (digitBitNum[6][0+2*i]-1));
     digitMask[6+i] &= ~(1ULL << (digitBitNum[6][1+2*i]-1));

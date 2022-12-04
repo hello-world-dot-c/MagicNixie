@@ -33,12 +33,13 @@ DEFINITIONS AND SETTINGS
 #define TIME_ZONE_STR  F("de")
 
 #define NTP_SERVER_STR  F("fritz.box") //F("192.168.1.1")
-#define NTP_UPDATE_PERIOD  600 // 10 minutes
+#define NTP_UPDATE_PERIOD  60 //600 // 10 minutes
 #define NTP_UPDATE_TICKS  (NTP_UPDATE_PERIOD*1000/SYS_TIME_UPD_PERIOD)
+#define NTP_UPDATE_REPEATS  3
 
 // sets how often the main system time update handler is called before
 // the system time is attempted to be updated from the RTC again.
-#define RTC_UPDATE_PERIOD   25  // 25 seconds
+#define RTC_UPDATE_PERIOD   600  // 25 seconds
 #define RTC_UPDATE_TICKS  (RTC_UPDATE_PERIOD*1000/SYS_TIME_UPD_PERIOD)
 
 
@@ -47,38 +48,40 @@ GLOBAL VARIABLES/CLASSES
 ***************************************************************************/
 Timezone myTZ;
 
-
 /**************************************************************************
 LOCAL VARIABLES/CLASSES
 ***************************************************************************/
 #if USE_RTC
 RTC_DS3231 RTC;
 #endif
+bool setUpdateRtc = false;
 
 /**************************************************************************
 LOCAL FUNCTIONS
 ***************************************************************************/
 #if USE_RTC
-bool isValidDay(int month)
-{
-  int days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  if (month % 4 == 0) days[1] = 29;
-  if (month > days[month - 1]) return false;
-  else return true;
-}
-
-bool setRTCDateTime(byte h, byte m, byte s, byte d, byte mon, byte y) {
-
+bool setRTCDateTime(byte h, byte m, byte s, byte d, byte mon, word y) {
+  byte rh, rm, rs, rd, rmon;
+  word ry;
+  
+  _PF(MODULE"RTC want to update with: %02d:%02d.%02d, %02d.%02d.%04d\n", h,m,s,d,mon,y);
   RTC.adjust(DateTime(y, mon, d, h, m, s));
   DateTime now = RTC.now();
+  rh = now.hour();
+  rm = now.minute();
+  rs = now.second();
+  rd = now.day();
+  rmon = now.month();
+  ry = now.year();
+  _PF(MODULE"RTC read back          : %02d:%02d.%02d, %02d.%02d.%04d\n", rh,rm,rs,rd,rmon,ry);
   // Verify if the RTC update worked
   if (
-    (now.hour() == h) &&
-    (now.minute() == m) &&
-    (now.second() == s) &&
-    (now.day() == d) &&
-    (now.month() == mon) &&
-    (now.year() == y)
+    (rh == h) &&
+    (rm == m) &&
+    (rs == s) &&
+    (rd == d) &&
+    (rmon == mon) &&
+    (ry == y)
   ) {
     return true;
   }
@@ -106,8 +109,7 @@ bool getRTCTime(rtcTime_t *curTime) {
     (now1.second() < 60) &&
     (now1.day() <= 31) &&
     (now1.month() <= 12) &&
-    (now1.year() <= 2099) &&
-    (now1.dayOfTheWeek() < 7)
+    (now1.year() <= 2099) 
   ) {
     curTime->hours = now1.hour();
     curTime->minutes = now1.minute();
@@ -115,7 +117,6 @@ bool getRTCTime(rtcTime_t *curTime) {
     curTime->day = now1.day();
     curTime->month = now1.month();
     curTime->year = now1.year();
-    curTime->day_of_week = now1.dayOfTheWeek();
     ret_val = true;
   }  
 
@@ -133,8 +134,10 @@ void taskSystemTimeUpdate() {
   static bool ntp_available = false;
   static bool ntp_update_triggered = false;
   static int ntp_update_ticks = 1; // update asap
-  static int rtc_update_ticks = 1; // update asap
-  static bool rtc_set_current = false; // flag to request RTC to be written/updated
+  static int rtc_update_ticks = 3; // update asap
+  static int ntp_update_repeats = 3;
+  static int rtc_update_repeats = 3;
+  static bool rtc_available = false;
   rtcTime_t rtc_time;
 
   if (t_SystemTimeUpdate.isFirstIteration()) {
@@ -147,60 +150,89 @@ void taskSystemTimeUpdate() {
 #endif // USE_RTC
 //    setDebug(DEBUG, Serial);
     setDebug(NONE);
-    myTZ.setLocation(TIME_ZONE_STR);
+    myTZ.setLocation(TIME_ZONE_STR); // set "our" time zone
     setInterval(0); // disable automatic updates
 #if USE_NTP
     setServer(NTP_SERVER_STR);
-    ntp_available = true;
+    last_saved_update_time = lastNtpUpdateTime();
 #endif // USE_NTP
   }
 
 #if USE_NTP
-  ntp_available = (WiFi.status() == WL_CONNECTED);
-
+  // Determine indirectly whether an NTP update happened since
+  // the last time we checked.
   last_update_time = lastNtpUpdateTime();
   if (last_update_time != last_saved_update_time) {
     _PL(MODULE"NTP update successful, current time: "+myTZ.dateTime());
     last_saved_update_time = last_update_time;
-    rtc_set_current = true;
+    ntp_update_ticks = NTP_UPDATE_TICKS-1-(NTP_UPDATE_REPEATS-ntp_update_repeats);
+    ntp_update_repeats = NTP_UPDATE_REPEATS;
     ntp_update_triggered = false;
+    ntp_available = true;
+    rtc_available = false;
+    setUpdateRtc = true;
   }
 
-  // Periodically update system time from NTP server
-  if (ntp_available) {
+  // Periodically update system time from NTP server if we are online
+  if (WiFi.status() == WL_CONNECTED) {
     ntp_update_ticks--;
     if (ntp_update_ticks==0) {
-      updateNTP();
-      ntp_update_triggered = true;
-      ntp_update_ticks = NTP_UPDATE_TICKS;
+      updateNTP();  // manually trigger NTP update
+      if (ntp_update_triggered) {
+        ntp_update_repeats--;
+        if (ntp_update_repeats==0) {
+          _PF(MODULE"NTP update FAILED: Giving up for now");
+          ntp_update_ticks = NTP_UPDATE_TICKS-NTP_UPDATE_REPEATS;
+          ntp_update_triggered = false;
+          ntp_update_repeats = NTP_UPDATE_REPEATS;
+          ntp_available = false;
+          rtc_available = true;
+          rtc_update_ticks = RTC_UPDATE_TICKS;
+        } else {
+          ntp_update_ticks = 1;  // try immediately next call until we are successful
+        }
+      } else {
+        ntp_update_repeats = NTP_UPDATE_REPEATS;
+        ntp_update_triggered = true;
+      }
     } else if (ntp_update_triggered) {
       _PL(MODULE"NTP update FAILED: Timeout");
       ntp_update_triggered = false;
       ntp_update_ticks = 1;  // try immediately next call until we are successful
     }
+  } else {
+    ntp_available = false;
+    rtc_available = true;
+    rtc_update_ticks = RTC_UPDATE_TICKS;
   }
 #endif // USE_NTP
 
 #if USE_RTC
-  if (rtc_set_current) {
-    if (setRTCDateTime(myTZ.hour(), myTZ.minute(), myTZ.second(), myTZ.day(), myTZ.month(), myTZ.year())) {
-      _PL(MODULE"RTC updated, time: "+myTZ.dateTime()); 
-      rtc_set_current = false;
-    } else {
-      _PL(MODULE"RTC not updated, FAILED"); 
-    }
-  }
-  // Periodically update system time from RTC
-  rtc_update_ticks--;
-  if (rtc_update_ticks==0) {
-    if (getRTCTime(&rtc_time)) {
-      myTZ.setTime(rtc_time.hours, rtc_time.minutes, rtc_time.seconds,
-        rtc_time.day, rtc_time.month, rtc_time.year);
-      _PL(MODULE"RTC got updated time: "+myTZ.dateTime()); 
-      rtc_update_ticks = RTC_UPDATE_TICKS;  // update again later
-    } else {
-      _PL(MODULE"RTC get updated time FAILED!");
-      rtc_update_ticks = 1;  // try immediately next call until we are successful
+  // Periodically update system time from RTC as an alternative if NTP is not available
+  if (!ntp_available && rtc_available) {
+    rtc_update_ticks--;
+    if (rtc_update_ticks==0) {
+      if (getRTCTime(&rtc_time)) {
+        rtcTime_t nowTime;
+        nowTime.hours = myTZ.hour();
+        nowTime.minutes = myTZ.minute();
+        nowTime.seconds = myTZ.second();
+        nowTime.day = myTZ.day();
+        nowTime.month = myTZ.month();
+        nowTime.year = myTZ.year();
+        if (0 == memcmp(&rtc_time, &nowTime, sizeof(rtcTime_t))) {
+          _PL(MODULE"RTC read same time, not updated: "+myTZ.dateTime()); 
+        } else {
+          myTZ.setTime(rtc_time.hours, rtc_time.minutes, rtc_time.seconds,
+            rtc_time.day, rtc_time.month, rtc_time.year);
+          _PL(MODULE"RTC read time, updated: "+myTZ.dateTime()); 
+          rtc_update_ticks = RTC_UPDATE_TICKS;  // update again later
+        }
+      } else {
+        _PL(MODULE"RTC read time FAILED!");
+        rtc_update_ticks = RTC_UPDATE_TICKS;  // update again later
+        rtc_update_ticks = 5;  // try immediately next call until we are successful
+      }
     }
   }
 #endif // USE_RTC
@@ -210,20 +242,49 @@ void taskSystemTimeUpdate() {
 void taskTimeUpdate() {
   if (t_TimeUpdate.isFirstIteration()) {
   }
-  static uint8_t last_second = 0;
-  uint8_t this_second = second();
- 
-  // really do something only when the full second has changed
-  if (this_second != last_second) {
-    char separation_char;
-    char timeStr[10] = {'\0'};
-    if (this_second % 2)
-      separation_char = ' ';
-    else
-      separation_char = ':';
-    sprintf(timeStr, "%02d%c%02d%c%02d", hour(), separation_char, minute(), separation_char, this_second);
-    nixiePrint(0, timeStr);
-    last_second = this_second;
+
+}
+
+
+void taskTimeFastUpdate() {
+  char separation_char;
+  char timeStr[10];
+  uint8_t this_second;
+  uint8_t ones;
+  uint8_t tens;
+  uint8_t hour;
+
+  if (secondChanged()) {
+    if (gConf.use12hDisplay) {
+      hour = myTZ.hourFormat12();
+    } else {
+      hour = myTZ.hour();
+    }
+    this_second = myTZ.second();
+    ones = this_second % 10;
+    tens = this_second / 10;
+    separation_char = (ones % 2) ? ' ' : ':';
+
+    if (gConf.useSoftBlend) {
+      sprintf(timeStr, "**%c**%c*%1d", separation_char, separation_char, ones);
+      nixiePrint(0, timeStr, 1);
+      sprintf(timeStr, "%02d*%02d*%1d*", myTZ.hour(), myTZ.minute(), tens);
+      nixiePrint(0, timeStr, 2);
+    } else {
+      sprintf(timeStr, "%02d%c%02d%c%02d", hour, separation_char, myTZ.minute(), separation_char, myTZ.second());
+      nixiePrint(0, timeStr, 0);
+    }
+
+#if USE_RTC
+    if (setUpdateRtc) {
+      if (setRTCDateTime(myTZ.hour(), myTZ.minute(), myTZ.second(), myTZ.day(), myTZ.month(), myTZ.year())) {
+        _PL(MODULE"RTC updated, time: "+myTZ.dateTime()); 
+        setUpdateRtc = false;
+      } else {
+        _PL(MODULE"RTC not updated, FAILED"); 
+      }
+    }
+#endif // USE_RTC
   }
 }
 

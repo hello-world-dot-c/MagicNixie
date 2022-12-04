@@ -27,10 +27,11 @@ GLOBAL VARIABLES/CLASSES
 Task t_WiFiConnect(5000, TASK_FOREVER, &taskWiFiConnect);
 Task t_MqttConnect(5000, TASK_FOREVER, &taskMqttConnect);
 Task t_WebConnect(5000, TASK_FOREVER, &taskWebConnect);
-Task t_NixieUpdate(100, TASK_FOREVER, &taskNixieUpdate);
-Task t_TimeUpdate(17, TASK_FOREVER, &taskTimeUpdate);
+Task t_NixieUpdate(NIXIE_UPD_PERIOD, TASK_FOREVER, &taskNixieUpdate);
+Task t_TimeUpdate(20, TASK_FOREVER, &taskTimeUpdate);
+Task t_TimeFastUpdate(1, TASK_FOREVER, &taskTimeFastUpdate);
 Task t_SystemTimeUpdate(SYS_TIME_UPD_PERIOD, TASK_FOREVER, &taskSystemTimeUpdate);
-Task t_LedsUpdate(1000, TASK_FOREVER, &taskLedsUpdate);
+Task t_LedsUpdate(LED_UPD_PERIOD, TASK_FOREVER, &taskLedsUpdate);
 Task t_MqttRun(200, TASK_FOREVER, &taskMqttRun);
 Task t_WebRun(50, TASK_FOREVER, &taskWebRun);
 
@@ -67,9 +68,8 @@ void setupTasks() {
   addAndRun(&t_WiFiConnect);
   addAndRun(&t_MqttConnect);
   addAndRun(&t_NixieUpdate);
-
-  // Give the RTC a bit more time to stabilizew
   addAndRun(&t_SystemTimeUpdate);
+  addAndRun(&t_TimeFastUpdate);
 //  ts.addTask(t_SystemTimeUpdate);
 //  t_SystemTimeUpdate.enableDelayed(2500);
 }

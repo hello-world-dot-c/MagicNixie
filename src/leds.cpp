@@ -17,11 +17,16 @@
 
 #include "magicnixie.h"
 
+/**************************************************************************
+DEFINITIONS AND SETTINGS
+***************************************************************************/
 #define MODULE "*LED: "
 
 #define NUMPIXELS      8
-#define LEDsSpeed      10
-const int LEDsDelay=40;
+
+#define LEDS_MILLISECONDS_BY_TICKS(time_ms)  (((time_ms) + LED_UPD_PERIOD - 1) / LED_UPD_PERIOD)
+#define LEDS_SECONDS_BY_TICKS(time_s) LEDS_MILLISECONDS_BY_TICKS(1000*(time_s))
+
 
 /**************************************************************************
 GLOBAL VARIABLES/CLASSES
@@ -32,30 +37,13 @@ Adafruit_NeoPixel Leds = Adafruit_NeoPixel(NUMPIXELS, PIN_PWM1, NEO_GRB + NEO_KH
 /**************************************************************************
 LOCAL VARIABLES/CLASSES
 ***************************************************************************/
+static bool selfTest = false;
+static int selfTestCnt;
 
 
 /**************************************************************************
 LOCAL FUNCTIONS
 ***************************************************************************/
-
-
-/**************************************************************************
-PUBLIC FUNCTIONS
-***************************************************************************/
-void taskLedsUpdate() {
-  if (t_LedsUpdate.isFirstIteration()) {
-  }
-
-}
-
-
-void setupLeds() {
-  Leds.begin(); // This initializes the NeoPixel library.
-  Leds.setBrightness(50);
-  turnLedsOff();
-}
-
-
 void turnLedsOff()
 {
   for(int i=0;i<NUMPIXELS;i++)
@@ -65,27 +53,48 @@ void turnLedsOff()
   Leds.show();
 }
 
-
-void testLeds()
+void setAllLeds(uint8_t r, uint8_t g, uint8_t b)
 {
   for(int i=0;i<NUMPIXELS;i++)
   {
-    Leds.setPixelColor(i, Leds.Color(255, 0, 0)); 
+    Leds.setPixelColor(i, Leds.Color(r, g, b)); 
   }
   Leds.show(); // This sends the updated pixel color to the hardware.
-  delay(1000);
-  for(int i=0;i<NUMPIXELS;i++)
-  {
-    Leds.setPixelColor(i, Leds.Color(0, 255, 0)); 
+}
+
+
+/**************************************************************************
+PUBLIC FUNCTIONS
+***************************************************************************/
+void taskLedsUpdate() {
+  if (t_LedsUpdate.isFirstIteration()) {
+    selfTestCnt = 0;
+    selfTest = true;
+    _PL(MODULE"Self test started");
   }
-  Leds.show(); // This sends the updated pixel color to the hardware.
-  delay(1000);
-  for(int i=0;i<NUMPIXELS;i++)
-  {
-    Leds.setPixelColor(i, Leds.Color(0, 0, 255)); 
+
+  if (selfTest) {
+    selfTestCnt++;
+    if (selfTestCnt == LEDS_SECONDS_BY_TICKS(1)) {
+      setAllLeds(255,0,0);
+    }
+    else if (selfTestCnt == LEDS_SECONDS_BY_TICKS(2)) {
+      setAllLeds(0,255,0);
+    }
+    else if (selfTestCnt == LEDS_SECONDS_BY_TICKS(3)) {
+      setAllLeds(0,0,255);
+    }
+    else if (selfTestCnt == LEDS_SECONDS_BY_TICKS(4)) {
+      turnLedsOff();
+      selfTest = false;
+    }
   }
-  Leds.show(); // This sends the updated pixel color to the hardware.
-  delay(1000);
+}
+
+
+void setupLeds() {
+  Leds.begin(); // This initializes the NeoPixel library.
+  Leds.setBrightness(50);
   turnLedsOff();
 }
 

@@ -19,6 +19,25 @@
 
 #define MODULE "*M: "
 
+/**************************************************************************
+GLOBAL VARIABLES/CLASSES
+***************************************************************************/
+gConf_t gConf;
+
+
+/**************************************************************************
+LOCAL VARIABLES/CLASSES
+***************************************************************************/
+
+
+/**************************************************************************
+LOCAL FUNCTIONS
+***************************************************************************/
+
+
+/**************************************************************************
+PUBLIC FUNCTIONS
+***************************************************************************/
 /*---------------------------------------------------------------*/
 /* Utility function                                              */
 /* Halt the program and wait for "key press" at the serial port. */
@@ -79,12 +98,15 @@ String formatBytes(size_t bytes)  // convert sizes in bytes to KB and MB
 void setup() {
   // Init UART for debugging output.
   Serial.begin(921600);
-
   // Initialize critical hardware first
   setupLeds();
   setupNixie();
 
+  memset(&gConf, 0, sizeof(gConf_t));
+  delay(1000);
+  Serial.flush();
   while(!Serial){} // Waiting for serial connection
+
   _PL(MAGICNIXIE_VERSION);
   _PF(MODULE"CPU frequency: %d MHz\n", system_get_cpu_freq());
 

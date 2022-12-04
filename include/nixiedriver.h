@@ -26,7 +26,7 @@ extern SPIClass SPI;
 extern void taskNixieUpdate();
 
 // Function prototypes
-void nixiePrint(int Pos, char *Str);
+void nixiePrint(int Pos, char *Str, uint8_t blending);
 void setupNixie();
 void loopNixie();
 
