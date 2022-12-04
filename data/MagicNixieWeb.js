@@ -58,9 +58,6 @@ function mySliderFunction(type, val)
 	{
 		var valStr = "ANTIPOISON=" + val.toString();	
 	}
-	// Must be written like this: "#00FF00"
-	// Must remember to convert to number, otherwise toString (16) will not work.
-  //document.getElementById("colorBox").style.backgroundColor = hexFromRGB( Number(red_slider.value), Number(green_slider.value), Number(blue_slider.value) );
 	client.open("POST", "/", true);
 	client.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 	client.send(valStr);
@@ -119,13 +116,18 @@ document.addEventListener('DOMContentLoaded', function ()
             }
             if (event.target.id === 'hoursLeadingZeroesButton')
             {
-                varStrNum = "SHOWLEAD0";
+                varStrNum = "SHOWLEAD0HR";
                 varStr = "leadingZeroesStatus";
+            }
+            if (event.target.id === 'dateLeadingZeroesButton')
+            {
+                varStrNum = "SHOWLEAD0DT";
+                varStr = "dateLeadingZeroesStatus";
             }
             if (event.target.id === 'quietNightsButton')
             {
                 varStrNum = "QUIETNIGHTS";
-                varStr = "qietNightsStatus";
+                varStr = "quietNightsStatus";
             }
             valStrNum = varStrNum + "=" + valStrNum;
             document.getElementById(varStr).innerHTML = valStr;

@@ -87,6 +87,7 @@ typedef enum {
 typedef struct {
   bool     use12hDisplay;
   bool     showLeading0Hour;  
+  bool     showLeading0Date;  
   bool     useSoftBlend;
   bool     syncRTC;
   bool     quietNights;

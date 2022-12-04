@@ -226,13 +226,8 @@ void nixieTurnOnOffPwm (boolean on) {
     if (fadingCtrl.active || (gConf.nixieBrightness<100)) {
       analogWriteFreq(PWM_FREQUENCY);
       analogWrite(PIN_SHDN, fadingCtrl.analog_val);  // PWM to control brightness for all nixies
-      if (fadingCtrl.analog_val < PWMRANGE)
-        disableLEDsUpdate = true;
-      else
-        disableLEDsUpdate = false;
     } else {
       digitalWrite(PIN_SHDN, fadingCtrl.digital_val); // Control nixie driver
-      disableLEDsUpdate = false;
     }
   } else {
     digitalWrite(PIN_SHDN, HIGH); // Control nixie driver
@@ -387,6 +382,7 @@ void nixiePrint(int Pos, char *Str, uint8_t blending) {
         antiPoisoning.digit[digitpos].disabled = false;
       } else if (ch == ' ') {
         // space clears the position and also temporarily disables anti-poisoning
+        displayMem[blending].mask |= ~digitMask[digitpos]; // set relevant bits to 1
         antiPoisoning.digit[digitpos].disabled = true;
       }
     } else {

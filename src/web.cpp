@@ -65,7 +65,7 @@ String getContentType(String filename)
   else if (filename.endsWith(".css")) return "text/css";
   else if (filename.endsWith(".js")) return "application/javascript";
   else if (filename.endsWith(".ico")) return "image/x-icon";
-  else if (filename.endsWith(".svg")) return "image/svg+xml"; // HHS new 2019-12-18
+  else if (filename.endsWith(".svg")) return "image/svg+xml";
   return "text/plain";
 }
 

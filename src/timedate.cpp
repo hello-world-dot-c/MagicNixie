@@ -53,7 +53,7 @@ static RTC_DS3231 RTC;
 #endif
 static bool setUpdateRtc = false;
 static gShowContent_t showContent;
-static bool updateTimeAsap = false;
+static bool updateTimeAsap = true;
 
 /**************************************************************************
 LOCAL FUNCTIONS
@@ -341,7 +341,13 @@ void taskTimeUpdate() {
         case SHOW_TIME:
           break;
         case SHOW_DATE:
-          sprintf(str, "%2d.%2d.%02d", myTZ.day(), myTZ.month(), myTZ.year() % 100 );
+          if ((gConf.showLeading0Date) || (myTZ.day() >= 10)) {
+            // even when leading 0 for date is turned off, when the day has two digits, also show the month as two
+            // digits since it looks better this way, e.g. " 2. 3.22" is ok but show "12.03.22" instead of "12. 3.22"
+            sprintf(str, "%02d.%02d.%02d", myTZ.day(), myTZ.month(), myTZ.year() % 100 );
+          } else {
+            sprintf(str, "%2d.%2d.%02d", myTZ.day(), myTZ.month(), myTZ.year() % 100 );
+          }
           strncpy(gVars.dateStr,str,sizeof(gVars.dateStr));
           _PF(MODULE"Showing date: %s\n", str);
           break;
@@ -434,7 +440,7 @@ void taskTimeFastUpdate() {
     if (gConf.useSoftBlend && !updateTimeAsap) {
       sprintf(timeStr+2, "*%02d*%1d*", myTZ.minute(), tens);
       nixiePrint(0, timeStr, 2);
-      sprintf(timeStr, "**%c**%c*%1d", separation_char, separation_char, singles);
+      sprintf(timeStr+2, "%c**%c*%1d", separation_char, separation_char, singles);
       nixiePrint(0, timeStr, 1);
       strncpy(gVars.timeStr,timeStr,sizeof(gVars.timeStr));
     } else {
