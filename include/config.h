@@ -1,6 +1,6 @@
 /* 
  * This file is part of the MagicNixie project (https://github.com/hello-world-dot-c/MagicNixie).
- * Copyright (c) 2020 Chris Keydel.
+ * Copyright (c) 2022 Chris Keydel.
  * 
  * This program is free software: you can redistribute it and/or modify  
  * it under the terms of the GNU General Public License as published by  
