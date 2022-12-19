@@ -58,4 +58,5 @@ The only available unused signal is D6/GPIO12 (MISO). We could wire this to the 
 * Edit config.h and platformio.ini to make adjustments for your network environment and hardware
 * Build and download the firmware to the WeMos D1 R2 board
 * Enjoy (if it works) or curse (if it doesn't) ;-)
+
 The firmware outputs extensive logging information to the debug UART which you can use to diagnose problems
