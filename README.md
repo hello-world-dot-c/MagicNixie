@@ -26,11 +26,8 @@ Firmware to use the GRA &amp; AFCH IN-14 Arduino Shield Nixie Tubes Clock modifi
 
 ## Hardware references
 [Schematics for the NCS314 Nixie shield that was used for the modification, version 3.4](http://gra-afch.com/content/uploads/2020/12/Scheme-Shield-NCS314-6-v3.4.pdf)
-
 [WeMos D1 R2 Board Schematic](https://www.openhacks.com/uploadsproductos/wemos-d1-r2-schematic.pdf)
-
 [WeMos D1 R2 Pinout](https://www.elkim.no/wp-content/uploads/2021/06/PINOUT0G-00005444WIFI-D1R2-ESP8266.pdf)
-
 [Arduino Uno Pinout](https://diyi0t.com/wp-content/uploads/2019/08/Arduino-Uno-Pinout-1.png)
 
 ## Modifying Nixie Clock Shield NCS314 for the use with WeMos D1 R2 board
@@ -51,3 +48,10 @@ Arduino-D1/GPIO1 (Tx) is connected to the debugging USB UART and to the optional
 
 ## Free signals
 The only available unused signal is D6/GPIO12 (MISO). We could wire this to the shield's IR signal if we needed remote support.
+
+## Building
+* [Install PlatformIO](https://platformio.org/install)
+* Clone the repository
+* Edit config.h and platformio.ini to make adjustments for your network environment and hardware
+* Build and download the firmware to the WeMos D1 R2 board
+* The firmware outputs extensive logging information to the debug UART which you can use to diagnose problems
