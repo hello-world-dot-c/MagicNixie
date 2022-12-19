@@ -6,8 +6,11 @@ Firmware to use the GRA &amp; AFCH IN-14 Arduino Shield Nixie Tubes Clock modifi
 [Video to demonstrate the firmware](https://youtu.be/gqnWdiJaWJw)
 ## Hardware references
 [Schematics for the NCS314 Nixie shield that was used for the modification, version 3.4](http://gra-afch.com/content/uploads/2020/12/Scheme-Shield-NCS314-6-v3.4.pdf)
+
 [Wemos D1 R2 Board Schematic](https://www.openhacks.com/uploadsproductos/wemos-d1-r2-schematic.pdf)
+
 [Arduino Uno Pinout](https://diyi0t.com/wp-content/uploads/2019/08/Arduino-Uno-Pinout-1.png)
+
 ## Modifying Nixie Clock Shield NCS314 for the use with WeMos D1 R2 board
 The ESP8266 on the WeMos D1 R2 has a lot fewer I/O pins than the typical ATmega on the standard Arduino board so several pins are connected to the same signals and can't be used independently from each other.
 |NCS314|Arduino|WeMos D1 R2|ESP8266|
