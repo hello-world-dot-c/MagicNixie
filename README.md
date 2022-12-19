@@ -13,6 +13,7 @@ Firmware to use the GRA &amp; AFCH IN-14 Arduino Shield Nixie Tubes Clock modifi
 * Web interface
 * Using NTP for time/date sync
 * Using MQTT for temp updates, configuration and logging
+* Sound and music output support
 * Modular PlatformIO project for ESP8266
 * Arduino library management (portable)
 * Multitasking scheduler
