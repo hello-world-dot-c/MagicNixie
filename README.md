@@ -34,7 +34,7 @@ Firmware to use the GRA &amp; AFCH IN-14 Arduino Shield Nixie Tubes Clock modifi
 [Arduino Uno Pinout](https://diyi0t.com/wp-content/uploads/2019/08/Arduino-Uno-Pinout-1.png)
 
 ## Modifying Nixie Clock Shield NCS314 for the use with WeMos D1 R2 board
-The ESP8266 on the WeMos D1 R2 has a lot fewer I/O pins than the typical ATmega on the standard Arduino board so several pins are connected to the same signals and can't be used independently from each other.
+The ESP8266 on the WeMos D1 R2 has a lot fewer I/O pins than the typical ATmega on the standard Arduino board so several pins are connected to the same signals and can't be used independently from each other. The most important signals are individually accessible, though. Following table shows how the signals are connected in the respective boards:
 
 |NCS314|Arduino|WeMos D1 R2|ESP8266|
 |------|-------|-----------|-------|
@@ -46,7 +46,8 @@ The ESP8266 on the WeMos D1 R2 has a lot fewer I/O pins than the typical ATmega 
 |PWM1  |D6     |D4         |GPIO2  |
 
 ## Conflicts
-Thankfully, in the new v3.4 version of NCS314 the PWM2 and PWM3 signals are not used so there is no conflict with them. The only remaining conflict is the IR signal on Arduino D2 pin which is connected to D14 and SDA. To resolve this, I had to isolate the D2 pin on WeMos. One could also remove the IR receiver.
+Older versions of NCS314 had PWM2 and PWM3 signals that together with with PWM1 controlled the red/green/blue LEDs for illumination but here, only PWM1 is used to control all individually addressable SK6812-Mini LEDs together. The only remaining conflict is the IR signal on the Arduino D2 pin which is connected to D14 and SDA. To resolve this, I had to isolate the D2 pin on the WeMos. Alternatively, one can also remove the IR receiver on the Nixie shield.
+Arduino-D1/GPIO1 (Tx) is connected to the debugging USB UART and to the optional GPS module. Right now this would be a conflict even with no GPS module connected.
 
 ## Free signals
-The only free signals still available are D6/GPIO12 (MISO) and maybe D1/GPIO1 (Tx). Tx is normally connected to the debugging USB UART but here also GPS module if connected. So right now this would be a conflict so it is not supported/not free.
+The only available unused signal is D6/GPIO12 (MISO). We could wire this to the shield's IR signal if we needed remote support.
