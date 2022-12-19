@@ -30,7 +30,7 @@
 #define NTP_SERVER_STR "fritz.box" //F("192.168.1.1")
 
 // MQTT settings
-#define MQTT_SERVER "homeslave.fritz.box"
+#define MQTT_SERVER "myserver.fritz.box"
 #define MQTT_SERVER_PORT 1883
 #define MQTT_CLIENT "nixie-clock"
 #define MQTT_MYNAME "magicnixie"
