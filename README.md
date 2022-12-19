@@ -7,7 +7,9 @@ Firmware to use the GRA &amp; AFCH IN-14 Arduino Shield Nixie Tubes Clock modifi
 ## Hardware references
 [Schematics for the NCS314 Nixie shield that was used for the modification, version 3.4](http://gra-afch.com/content/uploads/2020/12/Scheme-Shield-NCS314-6-v3.4.pdf)
 
-[Wemos D1 R2 Board Schematic](https://www.openhacks.com/uploadsproductos/wemos-d1-r2-schematic.pdf)
+[WeMos D1 R2 Board Schematic](https://www.openhacks.com/uploadsproductos/wemos-d1-r2-schematic.pdf)
+
+[WeMos D1 R2 Pinout](https://www.elkim.no/wp-content/uploads/2021/06/PINOUT0G-00005444WIFI-D1R2-ESP8266.pdf)
 
 [Arduino Uno Pinout](https://diyi0t.com/wp-content/uploads/2019/08/Arduino-Uno-Pinout-1.png)
 
