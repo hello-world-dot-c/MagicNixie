@@ -3,7 +3,7 @@
 
 Firmware to use the GRA &amp; AFCH IN-14 Arduino Shield Nixie Tubes Clock modified to use a Wemos D1 WiFi Arduino-compatible board with ESP8266.
 
-[Video to demonstrate the firmware](https://youtu.be/gqnWdiJaWJw)
+[Video demonstrating the firmware](https://youtu.be/gqnWdiJaWJw)
 
 ## Features
 * WiFi connected through ESP8266
@@ -46,13 +46,16 @@ The ESP8266 on the WeMos D1 R2 has a lot fewer I/O pins than the typical ATmega 
 |PWM1  |D6     |D4         |GPIO2  |
 
 ## Conflicts
-Older versions of NCS314 had PWM2 and PWM3 signals that together with with PWM1 controlled the red/green/blue LEDs for illumination but here, only PWM1 is used to control all individually addressable SK6812-Mini LEDs together. The only remaining conflict is the IR signal on the Arduino D2 pin which is connected to D14 and SDA. To resolve this, I had to isolate the D2 pin on the WeMos. Alternatively, one can also remove the IR receiver on the Nixie shield.
-Arduino-D1/GPIO1 (Tx) is connected to the debugging USB UART and to the optional GPS module. Right now this would be a conflict even with no GPS module connected.
+Older versions of NCS314 had PWM2 and PWM3 signals that together with with PWM1 controlled the red/green/blue LEDs for illumination but here, only PWM1 is used to control all individually addressable SK6812-Mini LEDs together.
+### IR signal
+The IR signal is connected to the Arduino D2 pin which with the WeMos board is connected to D14 and SDA. To resolve this, I had to isolate the D2 pin on the WeMos. Alternatively, one can also remove the IR receiver on the Nixie shield.
+### Arduino-D1/GPIO1 (Tx)
+Arduino-D1/GPIO1 (Tx) is connected to the debugging USB UART and to the optional GPS module. Even without the GPS module connected, you can only use it for the debugging UART.
 
 ## Free signals
 The only available unused signal is D6/GPIO12 (MISO). We could wire this to the shield's IR signal if we needed remote support.
 
-## Building and Using
+## Building and using
 * [Install PlatformIO](https://platformio.org/install)
 * Clone the repository, open it in PlatformIO
 * Edit config.h and platformio.ini to make adjustments for your network environment and hardware
